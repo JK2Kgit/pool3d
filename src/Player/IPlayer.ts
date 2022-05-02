@@ -1,5 +1,12 @@
+import {Transform} from "../Transform";
+import {Vector3TimeScalar} from "../helpers/Vector3";
+
 export abstract class IPlayer{
-  public abstract getInput(): PlayerInput
+  cameraTransformInv: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI/ 5.7, y: 0, z: 0}) // roattion ok , position inverted
+  public setTransform(t: Transform): void{
+    this.cameraTransformInv = new Transform(Vector3TimeScalar(t.position, -1), t.rotation)
+  }
+  public abstract handleInput(dt:number): Transform
 }
 
 export class PlayerInput {

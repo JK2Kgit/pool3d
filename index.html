@@ -1,19 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Vite App</title>
     <script defer type="module" src="/src/main.ts"></script>
-  </head>
-  <body>
-    <div id="app">
-      <div id="controls"></div>
-      <div id="canvasDiv">
+    <script id="vs" type="x-shader/x-fragment">
+      attribute vec4 aVertexPosition;
+      attribute vec4 aVertexColor;
+
+      uniform mat4 uModelViewMatrix;
+      uniform mat4 uProjectionMatrix;
+
+      varying lowp vec4 vColor;
+
+      void main() {
+        gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+        vColor = aVertexColor;
+      }
+
+    </script>
+    <script id="fs" type="x-shader/x-vertex">
+        varying lowp vec4 vColor;
+        void main(void) {
+            gl_FragColor = vColor;
+        }
+
+    </script>
+</head>
+<body>
+<div id="app">
+    <div id="controls"></div>
+    <div id="canvasDiv">
         <canvas id="gameCanvas" width="640" height="400"></canvas>
         <canvas id="textCanvas" width="640" height="400"></canvas>
-      </div>
     </div>
-  </body>
+</div>
+</body>
 </html>
