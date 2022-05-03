@@ -22,6 +22,9 @@ export function createProgramInfo(gl: WebGL2RenderingContext, ids: string[]) {
         uniformLocations: {
             projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
             modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+            modelTextureType: gl.getUniformLocation(shaderProgram, 'uModelTextureType'),
+            resolution: gl.getUniformLocation(shaderProgram, 'uResolution'),
+            accentColor: gl.getUniformLocation(shaderProgram, 'uAccentColor'),
         },
     };
 }

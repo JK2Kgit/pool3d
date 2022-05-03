@@ -1,4 +1,4 @@
-import { Vector3 } from "./helpers/Vector3";
+import { Vector3 } from "../helpers/Vector3";
 
 export class Transform{
   position: Vector3

@@ -1,41 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8"/>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Vite App</title>
-    <script defer type="module" src="/src/main.ts"></script>
-    <script id="vs" type="x-shader/x-fragment">
-      attribute vec4 aVertexPosition;
-      attribute vec4 aVertexColor;
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vite App</title>
+  <script defer type="module" src="/src/main.ts"></script>
+  <script id="vs" type="x-shader/x-fragment">
+    attribute vec4 aVertexPosition;
+    attribute vec4 aVertexColor;
 
-      uniform mat4 uModelViewMatrix;
-      uniform mat4 uProjectionMatrix;
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
 
-      varying lowp vec4 vColor;
+    varying lowp vec4 vColor;
 
-      void main() {
-        gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-        vColor = aVertexColor;
+    void main() {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      vColor = aVertexColor;
+    }
+
+  </script>
+  <script id="fs" type="x-shader/x-vertex">
+    precision mediump float;
+
+    uniform ivec2 uResolution;
+    varying lowp vec4 vColor;
+    uniform int uModelTextureType;
+    uniform vec4 uAccentColor;
+
+    void main(void) {
+      vec4 col = vColor;
+      int densy = uResolution.y/100;
+      int densx = densy * 2;
+      ivec2 uv = ivec2(gl_FragCoord.xy);
+
+      if (uModelTextureType == 1){
+        int y = (uv.y - densy *(uv.y/densy));
+        if(y > densy / 2 - 1){
+          y = densy;
+        }else{
+          y = 0;
+        }
+        if(uv.x+y - densx * ((uv.x+y)/densx) > densx/2 - 1){
+          col = uAccentColor;
+        }
       }
 
-    </script>
-    <script id="fs" type="x-shader/x-vertex">
-        varying lowp vec4 vColor;
-        void main(void) {
-            gl_FragColor = vColor;
+      if (uModelTextureType == 2){
+        int y = (uv.y - densy *(uv.y/densy));
+        if(y > densy / 2 - 1){
+          col = uAccentColor;
         }
+      }
+      gl_FragColor = col;
+    }
 
-    </script>
+  </script>
+
 </head>
 <body>
 <div id="app">
-    <div id="controls"></div>
-    <div id="canvasDiv">
-        <canvas id="gameCanvas" width="640" height="400"></canvas>
-        <canvas id="textCanvas" width="640" height="400"></canvas>
-    </div>
+  <div id="controls"></div>
+  <div id="canvasDiv">
+    <canvas id="gameCanvas" width="1280" height="800"></canvas>
+    <canvas id="textCanvas" width="640" height="400"></canvas>
+  </div>
 </div>
 </body>
 </html>

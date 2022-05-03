@@ -1,4 +1,4 @@
-import {Transform} from "../Transform";
+import {Transform} from "../GameObjects/Transform";
 import {Vector3TimeScalar} from "../helpers/Vector3";
 
 export abstract class IPlayer{
