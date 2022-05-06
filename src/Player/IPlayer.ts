@@ -1,12 +1,12 @@
 import {Transform} from "../GameObjects/Transform";
-import {Vector3TimeScalar} from "../helpers/Vector3";
+import {V3TimeScalar} from "../helpers/Vector3";
 import {Hit} from "../helpers/Hit";
 
 export abstract class IPlayer{
   cameraTransformInv: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI/ 5.7, y: 0, z: 0}) // roattion ok , position inverted
   hitCallback: (hit: Hit) => void = (_hit: Hit) => {}
   public setTransform(t: Transform): void{
-    this.cameraTransformInv = new Transform(Vector3TimeScalar(t.position, -1), t.rotation)
+    this.cameraTransformInv = new Transform(V3TimeScalar(t.position, -1), t.rotation)
   }
   public abstract handleInput(dt:number): Transform
 }

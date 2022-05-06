@@ -4,9 +4,10 @@ import * as wh from "./helpers/helpers"
 import {Transform} from "./GameObjects/Transform";
 import {SkyBox} from "./GameObjects/SkyBox";
 import {Ball} from "./GameObjects/Ball";
-import {Vector3, Vector3TimeScalar} from "./helpers/Vector3";
+import {Vector3, V3TimeScalar} from "./helpers/Vector3";
 import {getStartingBalls} from "./helpers/helpers";
 import {Hit} from "./helpers/Hit";
+import {Physics} from "./Physics";
 
 export class Game {
   canvas: HTMLCanvasElement
@@ -22,8 +23,10 @@ export class Game {
   skyBox: SkyBox
   balls: Ball[] = []
   whiteBall: Ball
+  centerPosition: Vector3
   programInfo: any
   cameraTransform: Transform =  new Transform({x: 0, y: 0, z: 0}, {x: Math.PI/5.7, y: 0, z: 0})
+  physics: Physics
 
   constructor(canvas: HTMLCanvasElement, textCanvas: HTMLCanvasElement, player0: IPlayer, player1: IPlayer) {
     this.canvas = canvas
@@ -41,21 +44,24 @@ export class Game {
     this.skyBox = new SkyBox(this.gl, this.programInfo)
     this.whiteBall = balls[0]
     this.balls = balls
+    this.centerPosition = this.whiteBall.position
+    this.physics = new Physics(this.balls)
   }
 
   start() {
     this.lastFrame = Date.now()
     this.players[this.currentPlayer].setTransform(this.cameraTransform)
-    this.players.forEach(p => p.hitCallback = this.handleHit)
+    this.players.forEach(p => p.hitCallback = (hit: Hit) => this.handleHit(hit) )
     window.requestAnimationFrame(() => this.frame());
   }
 
   frame() {
-    const dt = (Date.now() - this.lastFrame) / 1000
+    const time = Date.now()
+    const dt = (time - this.lastFrame) / 1000
     this.lastFrame = Date.now()
     const fps = Math.round(1 / dt);
     this.drawFps(fps)
-    this.update(dt)
+    this.update(dt, time)
     window.requestAnimationFrame(() => this.frame());
   }
 
@@ -66,14 +72,17 @@ export class Game {
     this.textContext.fillText("FPS: " + fps, 10, 30);
   }
 
-  update(dt: number) {
+  update(dt: number, time: number) {
 
     if(!this.locked){
       this.cameraTransform = this.players[this.currentPlayer].handleInput(dt)
     }
+    if(!this.physics.calculating){
+      this.centerPosition = this.whiteBall.position
+    }
+    this.balls = this.physics.getPositions(time)
     this.calculateCameraPosition()
     this.drawScene();
-
   }
 
   drawScene() {
@@ -84,14 +93,14 @@ export class Game {
   }
 
   private calculateCameraPosition() {
-    let distHorizontal = this.distHorizontalToEdge(this.cameraTransform.rotation, this.whiteBall.position)
-    this.cameraTransform.position = Vector3TimeScalar(this.whiteBall.position, -1)
-    this.table.position.z = - this.distVertical(this.cameraTransform.rotation, distHorizontal) - 4
-    this.table.position.y = this.heightTable(this.cameraTransform.rotation)
+    let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
+    this.cameraTransform.position = V3TimeScalar(this.centerPosition, -1)
+    this.table.position.z = - Game.distVertical(this.cameraTransform.rotation, distHorizontal) - 4
+    this.table.position.y = Game.heightTable(this.cameraTransform.rotation)
     // TODO: move table back and forth
   }
 
-  private distHorizontalToEdge(rotation: Vector3, point: Vector3): number{
+  private static distHorizontalToEdge(rotation: Vector3, point: Vector3): number{
     let phi = Math.abs(rotation.y) + Number.EPSILON
     phi = phi % (Math.PI*2)
 
@@ -130,30 +139,16 @@ export class Game {
     return dist
   }
 
-  private distVertical(rotation: Vector3, distHorizontal: number){
+  private static distVertical(rotation: Vector3, distHorizontal: number){
     return distHorizontal / Math.cos(rotation.x)
   }
 
-  private heightTable(rotation: Vector3){
+  private static heightTable(rotation: Vector3){
     let phi = Math.abs(rotation.y/2) + Number.EPSILON
     return Math.sin(phi)
   }
 
-  private handleHit(_hit: Hit){
-
+  private handleHit(hit: Hit){
+    this.physics.hit(hit)
   }
 }
-/*
-
-    let phi = rotation.y + Math.PI/2
-    let c = Math.cos(phi)
-    let s  = Math.sin(phi)
-    let x,y = 0
-    if(TABLE_WIDTH*Math.abs(s) < TABLE_HEIGHT * Math.abs(c)){
-      x = Math.sign(c) * TABLE_WIDTH / 2
-      y = Math.tan(phi) * x
-    }else {
-      y = Math.sign(s) * TABLE_HEIGHT / 2
-      x = (Math.cos(phi)/Math.sin(phi)) * y
-    }
-* */

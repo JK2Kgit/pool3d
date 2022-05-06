@@ -1,4 +1,4 @@
-export const EPSILON = 0.000001;
+import {EPSILON} from "../helpers/Constants";
 
 export function create() { // identity
   let out = new Float32Array(16);

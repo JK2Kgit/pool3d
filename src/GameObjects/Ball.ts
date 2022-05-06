@@ -1,29 +1,34 @@
 import {GameObject} from "./GameObject";
-import {Vector3, Vector3TimeScalar, Vector3ToArray} from "../helpers/Vector3";
+import {Vector3, V3TimeScalar, V3ToArray} from "../helpers/Vector3";
 import {pointsOnCircle} from "../helpers/helpers";
-import {FOV, WHITE} from "../helpers/Constants";
+import {BALL_SIZE, FOV, WHITE} from "../helpers/Constants";
 import * as mat4 from "../matrix/mat4";
 import {Transform} from "./Transform";
-import {Vector2, Vector2ToVector3} from "../helpers/Vector2";
 
 const SCALE = 1
-const SIZE = .2
+const SIZE = BALL_SIZE
 
 export class Ball extends GameObject{
   position: Vector3
   color: number[]
   type: number = 0 // 0 - white;  1 - color;  2 - grid;  3 - black
-  velocity: number = 0
-  direction: Vector2 = {x: 0, y: 0}
+  velocity: Vector3 = {x: 0, y: 0, z: 0}
   spin: Vector3 = {x: 0, y:0, z:0} // podkręcenie
 
 
-  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector2, type: number = 0) {
+  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector3, type: number = 0) {
     super(gl, programInfo);
     this.color = color
-    this.position = Vector2ToVector3(position, 0)
+    this.position = position
     this.type = type
     this.buffers = this.initBuffers();
+  }
+
+  clone(): Ball{
+    const ball = new Ball(this.gl, this.programInfo, this.color, this.position, this.type)
+    ball.velocity = this.velocity
+    ball.spin = this.spin
+    return ball
   }
 
   initBuffers() {
@@ -103,7 +108,7 @@ export class Ball extends GameObject{
       const modelViewMatrix = mat4.create();
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        Vector3ToArray(tablePosition))
+        V3ToArray(tablePosition))
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
         [0.0, 0.001, 0.0])
@@ -121,11 +126,11 @@ export class Ball extends GameObject{
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        Vector3ToArray(cameraTransform.position))
+        V3ToArray(cameraTransform.position))
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        Vector3ToArray(Vector3TimeScalar(position, SCALE)))
+        V3ToArray(V3TimeScalar(position, SCALE)))
 
       mat4.rotate(modelViewMatrix,
         modelViewMatrix,
@@ -202,7 +207,7 @@ export class Ball extends GameObject{
       const modelViewMatrix = mat4.create();
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        Vector3ToArray(tablePosition))
+        V3ToArray(tablePosition))
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
         [0.0, SIZE, 0.0])
@@ -220,11 +225,11 @@ export class Ball extends GameObject{
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        Vector3ToArray(cameraTransform.position))
+        V3ToArray(cameraTransform.position))
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        Vector3ToArray(Vector3TimeScalar(position, SCALE)))
+        V3ToArray(V3TimeScalar(position, SCALE)))
 
       mat4.scale(modelViewMatrix,modelViewMatrix, [SIZE, SIZE, SIZE])
       mat4.rotate(modelViewMatrix,
@@ -302,10 +307,10 @@ export class Ball extends GameObject{
     return [
       [0.0, 0.0, 0.0, ...points],
       [
-        -.6, 0.75, 0.0,
-        -.6, 0.5, 0.0,
-        -0, 0.5, 0.0,
-        -0, 0.75, 0.0
+        -.6, 0.7, 0.0,
+        -.6, 0.45, 0.0,
+        -0, 0.45, 0.0,
+        -0, 0.7, 0.0
       ],
       [0.0, 0.0, 0.0, ...points]
     ][i]

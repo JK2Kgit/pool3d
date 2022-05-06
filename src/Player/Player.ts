@@ -25,11 +25,15 @@ export class Player extends IPlayer{
   }
 
   registerHitHandler(){
-    this.inputMethod.setHitHandler(this.hitHandler)
+    this.inputMethod.setHitHandler(() => this.hitHandler())
+
   }
 
   hitHandler(){
-
-    this.hitCallback(undefined)
+    this.hitCallback({
+      direction: {x: 0, y: 0, z: -1.1},
+      positionOnBall: {x: 0, y: 0},
+      strength: this.strength
+    })
   }
 }

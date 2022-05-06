@@ -1,5 +1,5 @@
 import * as mat4 from "../matrix/mat4";
-import {Vector3, Vector3ToArray} from "../helpers/Vector3";
+import {Vector3, V3ToArray} from "../helpers/Vector3";
 import {Transform} from "./Transform";
 import {FOV, TABLE_HEIGHT} from "../helpers/Constants";
 import {GameObject} from "./GameObject";
@@ -84,7 +84,7 @@ export class Table extends GameObject{
 
     mat4.translate(modelViewMatrix,
       modelViewMatrix,
-      Vector3ToArray(this.position))
+      V3ToArray(this.position))
 
 
     mat4.rotate(modelViewMatrix,
@@ -98,7 +98,7 @@ export class Table extends GameObject{
 
     mat4.translate(modelViewMatrix,
       modelViewMatrix,
-      Vector3ToArray(cameraTransform.position))
+      V3ToArray(cameraTransform.position))
 
     gl.uniform4fv(programInfo.uniformLocations.accentColor, [0.41, 0.22, 0.17, 1])
 
