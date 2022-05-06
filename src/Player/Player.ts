@@ -5,11 +5,13 @@ import {clamp} from "../helpers/helpers";
 
 export class Player extends IPlayer{
   inputMethod: IInputMethod
-  sensitivity: number = 1
+  sensitivity: number = .8
+  strength: number = 1
 
   constructor(inputMethod: IInputMethod) {
     super();
     this.inputMethod = inputMethod
+    this.registerHitHandler()
   }
 
   handleInput(dt: number): Transform {
@@ -17,8 +19,17 @@ export class Player extends IPlayer{
     this.cameraTransformInv.rotation.y += (-this.sensitivity * dt * this.inputMethod.getRight())
     this.cameraTransformInv.rotation.x += (this.sensitivity * dt * this.inputMethod.getUp())
     this.cameraTransformInv.rotation.x += (-this.sensitivity * dt * this.inputMethod.getDown())
-    this.cameraTransformInv.rotation.x = clamp(this.cameraTransformInv.rotation.x, Math.PI/ 9, Math.PI/4)
+    this.cameraTransformInv.rotation.x = clamp(this.cameraTransformInv.rotation.x, Math.PI/ 12, Math.PI/4)
 
     return this.cameraTransformInv
+  }
+
+  registerHitHandler(){
+    this.inputMethod.setHitHandler(this.hitHandler)
+  }
+
+  hitHandler(){
+
+    this.hitCallback(undefined)
   }
 }

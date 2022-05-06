@@ -46,4 +46,8 @@ export class KeyboardInput implements IInputMethod{
     return this.keys.has("ArrowUp") && this.keys.has("Control") ? 1 : 0;
   }
 
+  setHitHandler(fn: (event: KeyboardEvent) => void) {
+    document.addEventListener('keypress', fn)
+  }
+
 }

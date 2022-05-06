@@ -1,8 +1,12 @@
 import * as mat4 from "../matrix/mat4";
-import {FOV, HEIGHT, WIDTH} from "../helpers/Constants";
+import {FOV, HEIGHT, MULTIPLAYER, WIDTH} from "../helpers/Constants";
 import {GameObject} from "./GameObject";
 
 export class SkyBox extends GameObject{
+  constructor(gl: WebGL2RenderingContext, programInfo: any) {
+    super(gl, programInfo);
+    this.buffers = this.initBuffers();
+  }
   initBuffers() {
     const gl = this.gl
 
@@ -96,8 +100,9 @@ export class SkyBox extends GameObject{
         zFar);
       const modelViewMatrix = mat4.create();
 
+      mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, -5, -40])
       mat4.scale(modelViewMatrix, modelViewMatrix, [40.0, 40.0, 40.0])
-      mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, x * 0.414, -1])
+      mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, x * MULTIPLAYER, 0.0])
       {
         const numComponents = 3;
         const type = gl.FLOAT;

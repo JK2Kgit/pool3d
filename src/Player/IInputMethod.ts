@@ -9,4 +9,5 @@ export interface IInputMethod{
   getUpModified(): number // strength up
   getDownModified(): number // strength down
 
+  setHitHandler(fn: () => void): void
 }

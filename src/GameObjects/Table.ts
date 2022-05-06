@@ -1,10 +1,17 @@
 import * as mat4 from "../matrix/mat4";
-import {Vector3ToArray} from "../helpers/Vector3";
+import {Vector3, Vector3ToArray} from "../helpers/Vector3";
 import {Transform} from "./Transform";
-import {FOV} from "../helpers/Constants";
+import {FOV, TABLE_HEIGHT} from "../helpers/Constants";
 import {GameObject} from "./GameObject";
 
 export class Table extends GameObject{
+  position: Vector3 = {x: 0, y: 0, z: -TABLE_HEIGHT}
+
+  constructor(gl: WebGL2RenderingContext, programInfo: any) {
+    super(gl, programInfo);
+    this.buffers = this.initBuffers();
+  }
+
   initBuffers() {
     const gl = this.gl
 
@@ -77,7 +84,7 @@ export class Table extends GameObject{
 
     mat4.translate(modelViewMatrix,
       modelViewMatrix,
-      Vector3ToArray(cameraTransform.position))
+      Vector3ToArray(this.position))
 
 
     mat4.rotate(modelViewMatrix,
@@ -88,6 +95,10 @@ export class Table extends GameObject{
       modelViewMatrix,
       cameraTransform.rotation.y,
       [0, 1, 0])
+
+    mat4.translate(modelViewMatrix,
+      modelViewMatrix,
+      Vector3ToArray(cameraTransform.position))
 
     gl.uniform4fv(programInfo.uniformLocations.accentColor, [0.41, 0.22, 0.17, 1])
 
