@@ -14,14 +14,17 @@ export class Player extends IPlayer{
     this.registerHitHandler()
   }
 
-  handleInput(dt: number): Transform {
+  handleInput(dt: number): {T: Transform, C: boolean} {
     this.cameraTransformInv.rotation.y += (this.sensitivity * dt * this.inputMethod.getLeft())
     this.cameraTransformInv.rotation.y += (-this.sensitivity * dt * this.inputMethod.getRight())
     this.cameraTransformInv.rotation.x += (this.sensitivity * dt * this.inputMethod.getUp())
     this.cameraTransformInv.rotation.x += (-this.sensitivity * dt * this.inputMethod.getDown())
     this.cameraTransformInv.rotation.x = clamp(this.cameraTransformInv.rotation.x, Math.PI/ 12, Math.PI/4)
+    let C = false
+    if(this.inputMethod.getLeft() || this.inputMethod.getRight() || this.inputMethod.getUp() || this.inputMethod.getDown())
+      C = true
 
-    return this.cameraTransformInv
+    return {T: this.cameraTransformInv, C: C}
   }
 
   registerHitHandler(){

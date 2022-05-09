@@ -13,7 +13,7 @@ body{
 
 #textCanvas {
   position: absolute;
-  top: 50px;
+  top: 100px;
   left: 100px;
 }
 #gameCanvas {

@@ -8,6 +8,7 @@ import {Vector3, V3TimeScalar} from "./helpers/Vector3";
 import {getStartingBalls} from "./helpers/helpers";
 import {Hit} from "./helpers/Hit";
 import {Physics} from "./Physics";
+import {WIDTH} from "./helpers/Constants";
 
 export class Game {
   canvas: HTMLCanvasElement
@@ -27,6 +28,7 @@ export class Game {
   programInfo: any
   cameraTransform: Transform =  new Transform({x: 0, y: 0, z: 0}, {x: Math.PI/5.7, y: 0, z: 0})
   physics: Physics
+  change: boolean = true
 
   constructor(canvas: HTMLCanvasElement, textCanvas: HTMLCanvasElement, player0: IPlayer, player1: IPlayer) {
     this.canvas = canvas
@@ -52,37 +54,60 @@ export class Game {
     this.lastFrame = Date.now()
     this.players[this.currentPlayer].setTransform(this.cameraTransform)
     this.players.forEach(p => p.hitCallback = (hit: Hit) => this.handleHit(hit) )
+    this.skyBox.draw(this.cameraTransform.rotation.x)
     window.requestAnimationFrame(() => this.frame());
   }
 
   frame() {
+    // DT
     const time = Date.now()
     const dt = (time - this.lastFrame) / 1000
     this.lastFrame = Date.now()
     const fps = Math.round(1 / dt);
+
+    // TextCanvas
+    this.textContext.clearRect(0, 0, this.textCanvas.width, this.textCanvas.height);
+    this.drawUi(this.currentPlayer, null)
     this.drawFps(fps)
+
+    // Game Canvas
     this.update(dt, time)
     window.requestAnimationFrame(() => this.frame());
   }
 
   drawFps(fps: number) {
-    this.textContext.clearRect(0, 0, this.textCanvas.width, this.textCanvas.height);
+    this.textContext.fillStyle = 'white';
+    this.textContext.fillRect(0, 0, 200, 60)
     this.textContext.font = '25px Arial';
     this.textContext.fillStyle = 'red';
     this.textContext.fillText("FPS: " + fps, 10, 30);
   }
 
-  update(dt: number, time: number) {
+  drawUi(_playerId: number, _playerOneColor: any){
+    const mult = WIDTH / 562
+    const half = WIDTH / 2
+    this.textContext.fillStyle = '#588d43';
+    this.textContext.fillRect(half - 14*mult, 0, 28*mult, 26*mult)
 
-    if(!this.locked){
-      this.cameraTransform = this.players[this.currentPlayer].handleInput(dt)
-    }
+
+
+  }
+
+  update(dt: number, time: number) {
     if(!this.physics.calculating){
       this.centerPosition = this.whiteBall.position
     }
-    this.balls = this.physics.getPositions(time)
-    this.calculateCameraPosition()
-    this.drawScene();
+    if(this.change || this.physics.calculating){
+      this.balls = this.physics.getPositions(time)
+      this.calculateCameraPosition()
+      this.drawScene();
+      this.change = false
+    }
+    if(!this.locked){
+      let res = this.players[this.currentPlayer].handleInput(dt)
+      this.cameraTransform = res.T
+      this.change = res.C
+    }
   }
 
   drawScene() {
@@ -103,13 +128,9 @@ export class Game {
   private static distHorizontalToEdge(rotation: Vector3, point: Vector3): number{
     let phi = Math.abs(rotation.y) + Number.EPSILON
     phi = phi % (Math.PI*2)
+    let alpha
 
-    let alpha = 0
-
-    let yNew = 0
-    let xDist = 0
-    let yDist = 0
-    let dist = 0
+    let yNew, xDist, yDist, dist
     if(phi <= Math.PI*.5 && phi > 0){
       xDist = 5 - point.x
       alpha = phi

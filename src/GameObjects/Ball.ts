@@ -9,23 +9,31 @@ const SCALE = 1
 const SIZE = BALL_SIZE
 
 export class Ball extends GameObject{
-  position: Vector3
-  color: number[]
+  position: Vector3 = {x: 0, y: 0, z: 0}
+  color: number[] = []
   type: number = 0 // 0 - white;  1 - color;  2 - grid;  3 - black
   velocity: Vector3 = {x: 0, y: 0, z: 0}
   spin: Vector3 = {x: 0, y:0, z:0} // podkręcenie
+  indices2Length: number = 0
 
 
-  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector3, type: number = 0) {
+  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector3, type: number = 0, skip: boolean = false) {
     super(gl, programInfo);
+    if(skip) return;
     this.color = color
     this.position = position
     this.type = type
     this.buffers = this.initBuffers();
+    this.indices2Length = Ball.getIndices(2).length
   }
 
   clone(): Ball{
-    const ball = new Ball(this.gl, this.programInfo, this.color, this.position, this.type)
+    const ball = new Ball(this.gl, this.programInfo, this.color, this.position, this.type, true)
+    ball.color = this.color
+    ball.position = this.position
+    ball.type = this.type
+    ball.buffers = this.buffers
+    ball.indices2Length = this.indices2Length
     ball.velocity = this.velocity
     ball.spin = this.spin
     return ball
@@ -79,6 +87,8 @@ export class Ball extends GameObject{
     const zFar = 100.0;
 
     const projectionMatrix = mat4.create();
+
+    const indices2Length = this.indices2Length
 
     mat4.perspective(projectionMatrix,
       fieldOfView,
@@ -195,7 +205,7 @@ export class Ball extends GameObject{
 
       {
         const offset = 0;
-        const vertexCount = Ball.getIndices(2).length;
+        const vertexCount = indices2Length;
         const type = gl.UNSIGNED_SHORT;
         gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
       }
@@ -294,7 +304,7 @@ export class Ball extends GameObject{
 
       {
         const offset = 0;
-        const vertexCount = Ball.getIndices(i).length;
+        const vertexCount = indices2Length;
         const type = gl.UNSIGNED_SHORT;
         gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
       }

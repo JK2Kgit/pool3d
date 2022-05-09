@@ -29,6 +29,8 @@ export function V3Div(a: Vector3, b: Vector3): Vector3 {
   return {x: a.x / b.x, y: a.y / b.y, z: a.z / b.z}
 }
 export function V3AbsLessThan(a: Vector3, value: number): boolean{
+  if(isNaN(a.x) || isNaN(a.y) || isNaN(a.z))
+    return true
   let val = Math.abs(value)
   return Math.abs(a.x) < val && Math.abs(a.y) < val && Math.abs(a.z) < val
 }

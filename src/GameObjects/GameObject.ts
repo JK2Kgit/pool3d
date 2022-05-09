@@ -3,7 +3,7 @@ export abstract class GameObject{
   buffers: any
   programInfo: any
 
-  constructor(gl: WebGL2RenderingContext, programInfo: any) {
+  protected constructor(gl: WebGL2RenderingContext, programInfo: any) {
     this.gl = gl
     this.programInfo = programInfo
   }
