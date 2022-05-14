@@ -63,46 +63,52 @@ export function round(n: number, d: number){
 export function getStartingBalls(gl: WebGL2RenderingContext, pi: any){
     const V2A = Vector2Add
     const V23 = Vector2ToVector3
-    const triangleTop: Vector2 = {x: 0, y: -1.8}
-    const whitePos: Vector2 = {x: 0, y: 3}
+    const triangleTop: Vector2 = {x: 1.8, y: 0}
+    const whitePos: Vector2 = {x: -3, y: 0}
     const white = [1.0, 1.0, 1.0, 1.0]
     const black = [0.0, 0.0, 0.0, 1.0]
     const red = [0.41, 0.22, 0.17, 1.0]
     // 0 - white;  1 - color;  2 - grid;  3 - black    (type)
     return [
-        new Ball(gl, pi, white, V23(whitePos, 0), 0),
-        new Ball(gl, pi, red, V23(triangleTop, 0), 2), // TOP
+        new Ball(gl, pi, white, V23(whitePos, 0), 0, 0),
+        new Ball(gl, pi, red, V23(triangleTop, 0), 2, 1), // TOP
 
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .22, y: -.4}), 0), 2),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.22, y: -.4}), 0), 1),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: .22}), 0), 2, 2),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: -.22}), 0), 1, 3),
 
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .44, y: -.8}), 0), 1),
-        new Ball(gl, pi, black, V23(V2A(triangleTop, {x: 0, y: -.8}), 0), 3),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.44, y: -.8}), 0), 2),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: .44}), 0), 1, 4),
+        new Ball(gl, pi, black, V23(V2A(triangleTop, {x: .8, y: 0}), 0), 3, 5),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: -.44}), 0), 2, 6),
 
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .66, y: -1.2}), 0), 2),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .22, y: -1.2}), 0), 1),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.22, y: -1.2}), 0), 2),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.66, y: -1.2}), 0), 1),
+        /*new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .66, y: -1.2}), 0), 2, 7),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .22, y: -1.2}), 0), 1, 8),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.22, y: -1.2}), 0), 2, 9),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.66, y: -1.2}), 0), 1, 10),
 
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .88, y: -1.6}), 0), 1),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .44, y: -1.6}), 0), 1),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: 0, y: -1.6}), 0), 2),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.44, y: -1.6}), 0), 1),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.88, y: -1.6}), 0), 2),
-
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .88, y: -1.6}), 0), 1, 11),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .44, y: -1.6}), 0), 1, 12),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: 0, y: -1.6}), 0), 2, 13),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.44, y: -1.6}), 0), 1, 14),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.88, y: -1.6}), 0), 2, 15),
+*/
 
 
     ]
 }
 
-export function Vector3Angle(vec: Vector3){
-    return Math.atan2(vec.x, vec.z) - Math.atan2(0, 1)
+export function Vector3Angle(vec: Vector2, vec2: Vector2 = {x: 1, y: 0}){
+    return Math.atan2(vec.y, vec.x) - Math.atan2(vec2.y, vec2.x)
 }
 
-export enum STATE{
+export enum BallState{
     sliding,
     rolling,
     spining,
     stationary
+}
+
+export type BallPosVelSpin = {
+    pos: Vector3
+    vel: Vector3
+    spin: Vector3
 }

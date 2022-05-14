@@ -6,7 +6,7 @@ import {clamp} from "../helpers/helpers";
 export class Player extends IPlayer{
   inputMethod: IInputMethod
   sensitivity: number = .8
-  strength: number = 1
+  strength: number = 10
 
   constructor(inputMethod: IInputMethod) {
     super();
@@ -34,7 +34,7 @@ export class Player extends IPlayer{
 
   hitHandler(){
     this.hitCallback({
-      direction: {x: 0, y: 0, z: -1.1},
+      direction: {x: 1, y: 0.01, z: 0},
       positionOnBall: {x: 0, y: 0},
       strength: this.strength
     })

@@ -7,7 +7,7 @@ import {Ball} from "./GameObjects/Ball";
 import {Vector3, V3TimeScalar} from "./helpers/Vector3";
 import {getStartingBalls} from "./helpers/helpers";
 import {Hit} from "./helpers/Hit";
-import {Physics} from "./Physics";
+import {Physics} from "./Physics/Physics";
 import {WIDTH} from "./helpers/Constants";
 
 export class Game {
@@ -23,12 +23,12 @@ export class Game {
   table: Table
   skyBox: SkyBox
   balls: Ball[] = []
-  whiteBall: Ball
   centerPosition: Vector3
   programInfo: any
   cameraTransform: Transform =  new Transform({x: 0, y: 0, z: 0}, {x: Math.PI/5.7, y: 0, z: 0})
   physics: Physics
   change: boolean = true
+  physicsMultiplayer: number = 5
 
   constructor(canvas: HTMLCanvasElement, textCanvas: HTMLCanvasElement, player0: IPlayer, player1: IPlayer) {
     this.canvas = canvas
@@ -44,9 +44,8 @@ export class Game {
     this.table = new Table(this.gl, this.programInfo)
     const balls = getStartingBalls(this.gl, this.programInfo)
     this.skyBox = new SkyBox(this.gl, this.programInfo)
-    this.whiteBall = balls[0]
     this.balls = balls
-    this.centerPosition = this.whiteBall.position
+    this.centerPosition = this.balls[0].position
     this.physics = new Physics(this.balls)
   }
 
@@ -56,6 +55,7 @@ export class Game {
     this.players.forEach(p => p.hitCallback = (hit: Hit) => this.handleHit(hit) )
     this.skyBox.draw(this.cameraTransform.rotation.x)
     window.requestAnimationFrame(() => this.frame());
+    //setInterval(() => {this.physics.physicsLoop()}, 10)
   }
 
   frame() {
@@ -95,9 +95,9 @@ export class Game {
 
   update(dt: number, time: number) {
     if(!this.physics.calculating){
-      this.centerPosition = this.whiteBall.position
+      this.centerPosition = this.balls[0].position
     }
-    if(this.change || this.physics.calculating){
+    if(this.change || this.physics.calculating || true){
       this.balls = this.physics.getPositions(time)
       this.calculateCameraPosition()
       this.drawScene();
@@ -120,8 +120,8 @@ export class Game {
   private calculateCameraPosition() {
     let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
     this.cameraTransform.position = V3TimeScalar(this.centerPosition, -1)
-    this.table.position.z = - Game.distVertical(this.cameraTransform.rotation, distHorizontal) - 4
-    this.table.position.y = Game.heightTable(this.cameraTransform.rotation)
+    this.table.position.x = Game.distVertical(this.cameraTransform.rotation, distHorizontal) + 4
+    this.table.position.z = Game.heightTable(this.cameraTransform.rotation)
     // TODO: move table back and forth
   }
 

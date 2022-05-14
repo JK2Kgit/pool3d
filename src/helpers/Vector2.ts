@@ -5,8 +5,8 @@ export type Vector2 = {
   y: number
 }
 
-export function Vector2ToVector3(vec: Vector2, y: number): Vector3 {
-  return {x: vec.x, y: y, z: vec.y}
+export function Vector2ToVector3(vec: Vector2, z: number): Vector3 {
+  return {x: vec.x, y: vec.y, z: z}
 }
 
 export function Vector2Add(vec: Vector2, vec2: Vector2): Vector2 {

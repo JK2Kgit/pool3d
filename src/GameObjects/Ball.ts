@@ -1,23 +1,29 @@
 import {GameObject} from "./GameObject";
-import {Vector3, V3TimeScalar, V3ToArray} from "../helpers/Vector3";
-import {pointsOnCircle} from "../helpers/helpers";
+import {V3TimeScalar, V3ToArrayWebgl, Vector3} from "../helpers/Vector3";
+import {BallPosVelSpin, BallState, pointsOnCircle} from "../helpers/helpers";
 import {BALL_SIZE, FOV, WHITE} from "../helpers/Constants";
 import * as mat4 from "../matrix/mat4";
 import {Transform} from "./Transform";
+import {IAgent} from "../Physics/IAgent";
 
 const SCALE = 1
 const SIZE = BALL_SIZE
 
-export class Ball extends GameObject{
+export class Ball extends GameObject implements IAgent{
+  id: number = -Infinity
   position: Vector3 = {x: 0, y: 0, z: 0}
+  //positionHistory: Vector3[] = []
   color: number[] = []
   type: number = 0 // 0 - white;  1 - color;  2 - grid;  3 - black
   velocity: Vector3 = {x: 0, y: 0, z: 0}
+  //velocityHistory: Vector3[] = []
   spin: Vector3 = {x: 0, y:0, z:0} // podkręcenie
+  //spinHistory: Vector3[] = []
   indices2Length: number = 0
+  state: BallState = BallState.stationary
 
 
-  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector3, type: number = 0, skip: boolean = false) {
+  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector3, type: number = 0, id:number, skip: boolean = false) {
     super(gl, programInfo);
     if(skip) return;
     this.color = color
@@ -25,18 +31,31 @@ export class Ball extends GameObject{
     this.type = type
     this.buffers = this.initBuffers();
     this.indices2Length = Ball.getIndices(2).length
+    this.id = id
   }
 
   clone(): Ball{
-    const ball = new Ball(this.gl, this.programInfo, this.color, this.position, this.type, true)
+    const ball = new Ball(this.gl, this.programInfo, this.color, this.position, this.type, this.id, true)
     ball.color = this.color
-    ball.position = this.position
+    ball.position = {...this.position} // deep
     ball.type = this.type
     ball.buffers = this.buffers
     ball.indices2Length = this.indices2Length
-    ball.velocity = this.velocity
-    ball.spin = this.spin
+    ball.velocity = {...this.velocity} // deep
+    ball.spin = {...this.spin} // deep
+    ball.state = this.state
+    ball.id = this.id
+    //ball.positionHistory = this.positionHistory
+    //ball.velocityHistory = this.velocityHistory
+    //ball.spinHistory = this.spinHistory
     return ball
+  }
+
+  setPosVelSpinState(x: BallPosVelSpin, s: BallState){
+    this.position = x.pos
+    this.velocity = x.vel
+    this.spin = x.spin
+    this.state = s
   }
 
   initBuffers() {
@@ -118,7 +137,7 @@ export class Ball extends GameObject{
       const modelViewMatrix = mat4.create();
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        V3ToArray(tablePosition))
+        V3ToArrayWebgl(tablePosition))
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
         [0.0, 0.001, 0.0])
@@ -136,11 +155,11 @@ export class Ball extends GameObject{
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        V3ToArray(cameraTransform.position))
+        V3ToArrayWebgl(cameraTransform.position))
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        V3ToArray(V3TimeScalar(position, SCALE)))
+        V3ToArrayWebgl(V3TimeScalar(position, SCALE)))
 
       mat4.rotate(modelViewMatrix,
         modelViewMatrix,
@@ -217,7 +236,7 @@ export class Ball extends GameObject{
       const modelViewMatrix = mat4.create();
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        V3ToArray(tablePosition))
+        V3ToArrayWebgl(tablePosition))
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
         [0.0, SIZE, 0.0])
@@ -235,11 +254,11 @@ export class Ball extends GameObject{
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        V3ToArray(cameraTransform.position))
+        V3ToArrayWebgl(cameraTransform.position))
 
       mat4.translate(modelViewMatrix,
         modelViewMatrix,
-        V3ToArray(V3TimeScalar(position, SCALE)))
+        V3ToArrayWebgl(V3TimeScalar(position, SCALE)))
 
       mat4.scale(modelViewMatrix,modelViewMatrix, [SIZE, SIZE, SIZE])
       mat4.rotate(modelViewMatrix,
