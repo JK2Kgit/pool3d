@@ -1,9 +1,11 @@
 import {Ball} from "../GameObjects/Ball";
 import {Hit} from "../helpers/Hit";
 import {V3, V3Add, V3Cross, V3RotateOn2D, V3Sub, V3TimeScalar, V3ToUnit, V3Val, Vector3} from "../helpers/Vector3";
-import {BALL_SIZE} from "../helpers/Constants";
-import {BallState, Vector3Angle} from "../helpers/helpers";
+import {BALL_SIZE, TOL, UPS} from "../helpers/Constants";
+import {BallState} from "../helpers/helpers";
 import {EventType, PoolEvent} from "./Event";
+import {V2, V2Angle} from "../helpers/Vector2";
+import {solveQuartic} from "../helpers/Polynomia";
 
 const g = 9.81 // gravity
 const R = BALL_SIZE
@@ -14,50 +16,168 @@ const u_sp = 10 * 2/5*R/9 // spinning friction
 
 export class Physics {
   balls: Ball[] // [0] is white
-  calculating: boolean = false
   time: number = 0
-  lastTime: number = 0
-  eventIndex: number = 0
   ballsFuture: Ball[][] = []
-  counter = 0
-  deb = false
+  history: {balls: Ball[][], index: number[], time: number[], event: (PoolEvent | undefined)[]} = {balls: [], event: [], index: [], time: []}
+  frames = 0
+  n = -1
 
-  constructor(balls: Ball[]) {
+  constructor(balls: Ball[], frames: number) {
     this.balls = balls
+    this.frames = frames
+    this.ballsFuture.push(this.balls.map((b) => b.clone()))
   }
 
-  getPositions(): Ball[]{
-    if(this.ballsFuture.length < 2) return this.ballsFuture[0]
+  isCalculating(): boolean{
+    return this.ballsFuture.length > 1
+  }
+
+  getPositionsNew(): Ball[]{
+    if(this.ballsFuture.length < 2){
+      this.balls = this.ballsFuture[0]
+      return this.ballsFuture[0]
+    }
     return this.ballsFuture.shift()!
   }
 
-  physicsLoop(){
-    const dt = (Date.now() - this.lastTime) / 1000
-    //if(this.balls[0].state != BallState.stationary)
-      //console.log(JSON.parse(JSON.stringify(this.balls[0])))
-    this.lastTime = Date.now()
+  timestamp(dt: number, event: PoolEvent | undefined = undefined){
+    this.n+=1
+    this.time += dt
 
-    this.evolve(dt)
-    let events = this.detectEvents()
-    events.forEach((ev) => {
-      this.counter+=1
-      this.deb = true
-      this.resolve(ev)
-    })
+    this.history.time.push(this.time)
+    this.history.index.push(this.n)
+
+    this.history.event.push(event)
+
+    this.history.balls.push(this.balls.map((b) => b.clone()))
+
+
+  }
+
+  generatePositions(dt: number){
+    const oldHistory = this.history
+    this.history = {balls: [], event: [], index: [], time: []}
+    this.n = -1
+    this.time = 0
+    this.balls = oldHistory.balls[0]
+    this.timestamp(0)
+    let dtPrime = dt
+    for (let i = 1; i < oldHistory.event.length; i++) {
+      const event = oldHistory.event[i]
+      if(event == undefined)
+        continue
+
+      if(event.tau == Infinity)
+        break;
+
+      let evenetTime = 0
+      while (evenetTime < (event.tau - dtPrime)){
+        this.evolve(dtPrime)
+        this.timestamp(dtPrime)
+        evenetTime += dtPrime
+        dtPrime = dt
+      }
+
+      dtPrime = dt - (event.tau - evenetTime)
+      this.balls = oldHistory.balls[i]
+    }
+
+    this.ballsFuture = this.history.balls
   }
 
   simulateEvents(){
+    let event = new PoolEvent(EventType.None, [], 0)
+    this.timestamp(0)
+
+    while (event.tau < Infinity){
+      event = this.getNextEvent()
+      this.evolve(event.tau)
+
+      this.resolve(event)
+      this.timestamp(event.tau, event)
+    }
+    console.log(JSON.parse(JSON.stringify(this.history)))
+    this.generatePositions(1/ UPS)
+
 
   }
 
-  evolve(dt: number){
+  getNextEvent(): PoolEvent{
+    let eventMin = new PoolEvent(EventType.None, [], Infinity)
+    {
+      let ev = this.getMinMotionEvent()
+      if(ev.tau < eventMin.tau)
+        eventMin = ev
+    }
+    {
+      let ev = this.getMinBallBallEvent()
+      console.log(JSON.parse(JSON.stringify(ev)),JSON.parse(JSON.stringify(eventMin)))
+      if(ev.tau < eventMin.tau)
+        eventMin = ev
+    }
 
+    return eventMin
+  }
+
+  getMinMotionEvent(): PoolEvent{
+    let tauMin = Infinity
+    let agentIds: number[] = []
+    let typeMin: EventType = EventType.None
+    this.balls.forEach((ball) => {
+      let tau = Infinity
+      let type: EventType = EventType.None
+      if(ball.state == BallState.stationary){
+        return
+      }
+      else if(ball.state == BallState.rolling){
+        tau = Physics.getRollTime(ball.velocity)
+        const tau_spin = Physics.getSpinTime(ball.spin)
+        type = tau_spin > tau ? EventType.RollingSpinning : EventType.RollingStationary
+      }
+      else if(ball.state == BallState.sliding){
+        tau = Physics.getSlideTime(ball.velocity, ball.spin)
+        type = EventType.SlidingRolling
+      }
+      else if(ball.state == BallState.spining){
+        tau = Physics.getSpinTime(ball.spin)
+        type = EventType.SpinningStationary
+      }
+      if(tau < tauMin){
+        tauMin = tau
+        agentIds = [ball.id]
+        typeMin = type
+      }
+    })
+
+    return new PoolEvent(typeMin, agentIds, tauMin)
+  }
+
+  getMinBallBallEvent(): PoolEvent{
+    let tauMin = Infinity
+    let agentIds: number[] = []
+    this.balls.forEach((ball1, i1) => {
+      this.balls.forEach((ball2, i2) => {
+        if (i1 >= i2)
+          return;
+
+        if (ball1.state == BallState.stationary && ball2.state == BallState.stationary)
+          return;
+
+        let tau = Physics.getCollisionTime(ball1, ball2);
+
+        if(tau < tauMin){
+          tauMin = tau
+          agentIds = [ball1.id, ball2.id]
+        }
+      })
+    })
+
+    return new PoolEvent(EventType.BallBall, agentIds, tauMin)
+  }
+
+  evolve(dt: number){
     this.balls.forEach((ball) => Physics.evolveBall(ball, dt))
 
-    const finished = this.balls.every((ball) => ball.state == BallState.stationary)
-    if(finished){
-      this.calculating = false
-    }
   }
 
   resolve(event: PoolEvent){
@@ -69,35 +189,74 @@ export class Physics {
     }
   }
 
-  detectEvents(): PoolEvent[] {
-    let events: PoolEvent[] = []
-    this.balls.forEach((ball1, i1) => {
-      this.balls.forEach((ball2, i2) => {
-        if (i1 >= i2) {
-          return
-        }
-        if (ball1.state == BallState.stationary && ball2.state == BallState.stationary) {
-          return;
-        }
-        //console.log(V3Val(V3Sub(ball1.position, ball2.position)), 0.4)
-        if (V3Val(V3Sub(ball1.position, ball2.position)) < R * 2) {
-          events.push(new PoolEvent(EventType.BallBall, [ball1.id, ball2.id], 0))
-        }
-      })
-    })
-
-    return events
-  }
-
   hit(hit: Hit){
-    if(this.calculating) return;
-    this.calculating = true
-    this.time = Date.now()
+    if(this.isCalculating()) return;
     this.balls[0].velocity = V3TimeScalar(hit.direction, hit.strength)
     this.balls[0].spin = {x: 0, y: 0, z: 0} // MAth.Pi*4
     this.balls[0].state = BallState.sliding// MAth.Pi*4
-    this.lastTime = Date.now()
+    this.history = {balls: [], event: [], index: [], time: []}
+    console.log("start")
     this.simulateEvents()
+    console.log(this.history)
+  }
+
+  private static getCollisionTime(ball1: Ball, ball2: Ball): number {
+    let c1 = ball1.position
+    let c2 = ball2.position
+    //console.log(JSON.parse(JSON.stringify( ball1)), JSON.parse(JSON.stringify( ball2)))
+
+    let a1 = V2(0, 0)
+    let b1 = V2(0, 0)
+    if(ball1.state == BallState.rolling || ball1.state == BallState.sliding){
+      const phi = V2Angle(ball1.velocity)
+      const vVal = V3Val(ball1.velocity)
+
+      const u = ball1.state == BallState.rolling ? V3(1,0,0) : V3RotateOn2D(V3ToUnit(Physics.getRelativeVelocity(ball1.velocity, ball1.spin)), -phi)
+      const friction = ball1.state == BallState.rolling ? u_r : u_s
+
+      a1.x = -0.5* friction*g*(u.x*Math.cos(phi) - u.y*Math.sin(phi))
+      a1.y = -0.5* friction*g*(u.x*Math.sin(phi) + u.y*Math.cos(phi))
+
+      b1.x = vVal*Math.cos(phi)
+      b1.y = vVal*Math.sin(phi)
+    }
+
+    let a2 = V2(0, 0)
+    let b2 = V2(0, 0)
+    if(ball2.state == BallState.rolling || ball2.state == BallState.sliding){
+      const phi = V2Angle(ball2.velocity)
+      const vVal = V3Val(ball2.velocity)
+
+      const u = ball2.state == BallState.rolling ? V3(1,0,0) : V3RotateOn2D(V3ToUnit(Physics.getRelativeVelocity(ball2.velocity, ball2.spin)), -phi)
+      const friction = ball2.state == BallState.rolling ? u_r : u_s
+
+      a2.x = -0.5* friction*g*(u.x*Math.cos(phi) - u.y*Math.sin(phi))
+      a2.y = -0.5* friction*g*(u.x*Math.sin(phi) + u.y*Math.cos(phi))
+
+      b2.x = vVal*Math.cos(phi)
+      b2.y = vVal*Math.sin(phi)
+    }
+    //console.log(a1, a2,b1,b2,c1,c2)
+
+    const A = V2(a2.x-a1.x, a2.y-a1.y)
+    const B = V2(b2.x-b1.x, b2.y-b1.y)
+    const C = V2(c2.x-c1.x, c2.y-c1.y)
+
+    //console.log(A,B,C)
+
+    //OK
+    const a = A.x*A.x  +  A.y*A.y
+    const b = 2*A.x*B.x  +  2*A.y*B.y
+    const c = B.x*B.x  +  2*A.x*C.x  +  2*A.y*C.y  +  B.y*B.y
+    const d = 2*B.x*C.x  +  2*B.y*C.y
+    const e = C.x*C.x  +  C.y*C.y  -  4*R*R
+
+    //console.log(abcde)
+    let result = solveQuartic(a,b,c,d,e).filter((res)=> res.im < TOL && res.re > TOL).map((res) => res.re)
+
+    //console.log(result)
+    return result.length > 0 ? Math.min(...result) : Infinity
+    return Infinity
   }
 
   private static getRelativeVelocity(vel: Vector3, spin: Vector3){
@@ -168,7 +327,7 @@ export class Physics {
   }
 
   private static apply_ball_slide(ball: Ball, t: number){
-    const phi = Vector3Angle(ball.velocity)
+    const phi = V2Angle(ball.velocity)
     const vel_R = V3RotateOn2D(ball.velocity, -phi)
     const spin_R = V3RotateOn2D(ball.spin, -phi)
 
@@ -227,7 +386,7 @@ export class Physics {
     const n = V3ToUnit(V3Sub(ball1.position, ball2.position))
     const t = V3RotateOn2D(n, -Math.PI/2)
 
-    const beta = Vector3Angle(velRelative, n)
+    const beta = V2Angle(velRelative, n)
 
 
     ball1.velocity = V3Add(V3TimeScalar(t, velValue*Math.sin(beta)), v2)

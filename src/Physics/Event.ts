@@ -12,5 +12,9 @@ export class PoolEvent{
 export enum EventType{
   None,
   BallBall,
-  BallRail
+  BallRail,
+  RollingSpinning,
+  RollingStationary,
+  SlidingRolling,
+  SpinningStationary
 }

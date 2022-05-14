@@ -8,7 +8,7 @@ import {Vector3, V3TimeScalar} from "./helpers/Vector3";
 import {getStartingBalls} from "./helpers/helpers";
 import {Hit} from "./helpers/Hit";
 import {Physics} from "./Physics/Physics";
-import {WIDTH} from "./helpers/Constants";
+import {UPS, WIDTH} from "./helpers/Constants";
 
 export class Game {
   canvas: HTMLCanvasElement
@@ -46,7 +46,7 @@ export class Game {
     this.skyBox = new SkyBox(this.gl, this.programInfo)
     this.balls = balls
     this.centerPosition = this.balls[0].position
-    this.physics = new Physics(this.balls)
+    this.physics = new Physics(this.balls, UPS)
   }
 
   start() {
@@ -71,7 +71,7 @@ export class Game {
     this.drawFps(fps)
 
     // Game Canvas
-    this.update(dt, time)
+    this.update(dt)
     window.requestAnimationFrame(() => this.frame());
   }
 
@@ -93,16 +93,15 @@ export class Game {
 
   }
 
-  update(dt: number, time: number) {
-    if(!this.physics.calculating){
+  update(dt: number) {
+    if(!this.physics.isCalculating()){
       this.centerPosition = this.balls[0].position
     }
-    if(this.change || this.physics.calculating || true){
-      this.balls = this.physics.getPositions(time)
-      this.calculateCameraPosition()
-      this.drawScene();
-      this.change = false
-    }
+    this.balls = this.physics.getPositionsNew()
+    this.calculateCameraPosition()
+    this.drawScene();
+    this.change = false
+
     if(!this.locked){
       let res = this.players[this.currentPlayer].handleInput(dt)
       this.cameraTransform = res.T

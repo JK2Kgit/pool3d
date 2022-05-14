@@ -72,6 +72,7 @@ export function getStartingBalls(gl: WebGL2RenderingContext, pi: any){
     return [
         new Ball(gl, pi, white, V23(whitePos, 0), 0, 0),
         new Ball(gl, pi, red, V23(triangleTop, 0), 2, 1), // TOP
+        //new Ball(gl, pi, black, V23(V2A(triangleTop, {x: .8, y: 0}), 0), 3, 2),
 
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: .22}), 0), 2, 2),
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: -.22}), 0), 1, 3),
@@ -96,9 +97,6 @@ export function getStartingBalls(gl: WebGL2RenderingContext, pi: any){
     ]
 }
 
-export function Vector3Angle(vec: Vector2, vec2: Vector2 = {x: 1, y: 0}){
-    return Math.atan2(vec.y, vec.x) - Math.atan2(vec2.y, vec2.x)
-}
 
 export enum BallState{
     sliding,
