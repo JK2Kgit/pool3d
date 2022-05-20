@@ -6,7 +6,7 @@ import {clamp} from "../helpers/helpers";
 export class Player extends IPlayer{
   inputMethod: IInputMethod
   sensitivity: number = .8
-  strength: number = 2
+  strength: number = 5
 
   constructor(inputMethod: IInputMethod) {
     super();

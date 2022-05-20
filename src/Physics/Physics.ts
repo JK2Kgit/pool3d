@@ -21,6 +21,7 @@ export class Physics {
   history: {balls: Ball[][], index: number[], time: number[], event: (PoolEvent | undefined)[]} = {balls: [], event: [], index: [], time: []}
   frames = 0
   n = -1
+  lastEvenet: PoolEvent | undefined = undefined
 
   constructor(balls: Ball[], frames: number) {
     this.balls = balls
@@ -33,6 +34,7 @@ export class Physics {
   }
 
   getPositionsNew(): Ball[]{
+    console.log(this.ballsFuture[0][0].state)
     if(this.ballsFuture.length < 2){
       this.balls = this.ballsFuture[0]
       return this.ballsFuture[0]
@@ -55,6 +57,7 @@ export class Physics {
   }
 
   generatePositions(dt: number){
+    console.log("AAAAAAAAAAAAAAAAA")
     const oldHistory = this.history
     this.history = {balls: [], event: [], index: [], time: []}
     this.n = -1
@@ -62,8 +65,9 @@ export class Physics {
     this.balls = oldHistory.balls[0]
     this.timestamp(0)
     let dtPrime = dt
-    for (let i = 1; i < oldHistory.event.length; i++) {
-      const event = oldHistory.event[i]
+    for (let i = 0; i < oldHistory.event.length; i++) {
+      const event = oldHistory.event[oldHistory.index[i]]
+      const o1 = JSON.parse(JSON.stringify(this.balls))
       if(event == undefined)
         continue
 
@@ -72,14 +76,16 @@ export class Physics {
 
       let evenetTime = 0
       while (evenetTime < (event.tau - dtPrime)){
-        this.evolve(dtPrime)
-        this.timestamp(dtPrime)
+        this.balls = oldHistory.balls[oldHistory.index[i - 1]].map((b) => b.clone())
+        this.evolve(evenetTime + dtPrime)
+        this.timestamp(evenetTime + dtPrime, event)
         evenetTime += dtPrime
         dtPrime = dt
       }
 
       dtPrime = dt - (event.tau - evenetTime)
-      this.balls = oldHistory.balls[i]
+      console.log(event, o1, JSON.parse(JSON.stringify(this.balls)))
+      this.balls = oldHistory.balls[oldHistory.index[i]]
     }
 
     this.ballsFuture = this.history.balls
@@ -111,10 +117,10 @@ export class Physics {
     }
     {
       let ev = this.getMinBallBallEvent()
-      console.log(JSON.parse(JSON.stringify(ev)),JSON.parse(JSON.stringify(eventMin)))
       if(ev.tau < eventMin.tau)
         eventMin = ev
     }
+    console.log(JSON.parse(JSON.stringify(eventMin)))
 
     return eventMin
   }
@@ -124,7 +130,7 @@ export class Physics {
     let agentIds: number[] = []
     let typeMin: EventType = EventType.None
     this.balls.forEach((ball) => {
-      let tau = Infinity
+      let tau = 0
       let type: EventType = EventType.None
       if(ball.state == BallState.stationary){
         return
@@ -192,12 +198,12 @@ export class Physics {
   hit(hit: Hit){
     if(this.isCalculating()) return;
     this.balls[0].velocity = V3TimeScalar(hit.direction, hit.strength)
-    this.balls[0].spin = {x: 0, y: 0, z: 0} // MAth.Pi*4
+    this.balls[0].spin = {x: Math.PI*0, y: 0, z: 0} // MAth.Pi*4
     this.balls[0].state = BallState.sliding// MAth.Pi*4
     this.history = {balls: [], event: [], index: [], time: []}
     console.log("start")
     this.simulateEvents()
-    console.log(this.history)
+    console.log(JSON.parse(JSON.stringify(this.history)))
   }
 
   private static getCollisionTime(ball1: Ball, ball2: Ball): number {
@@ -256,7 +262,6 @@ export class Physics {
 
     //console.log(result)
     return result.length > 0 ? Math.min(...result) : Infinity
-    return Infinity
   }
 
   private static getRelativeVelocity(vel: Vector3, spin: Vector3){
@@ -328,20 +333,19 @@ export class Physics {
 
   private static apply_ball_slide(ball: Ball, t: number){
     const phi = V2Angle(ball.velocity)
+    const pos_R = V3RotateOn2D(ball.position, -phi)
     const vel_R = V3RotateOn2D(ball.velocity, -phi)
     const spin_R = V3RotateOn2D(ball.spin, -phi)
 
     // relative velocity unit vector ball frame
     const rel = this.getRelativeVelocity(ball.velocity, ball.spin)
     const rel_U = V3ToUnit(rel)
-
     let vel_U = V3RotateOn2D(rel_U, -phi)
-
 
 
     const pos_B = {
       x: vel_R.x*t - .5*u_s*g*t*t * vel_U.x,
-      y: .5*u_s*g*t*t* vel_U.y,
+      y: -.5*u_s*g*t*t* vel_U.y,
       z: 0
     }
     const vel_B = V3Sub(vel_R, V3TimeScalar(vel_U, u_s*g*t))
@@ -362,7 +366,7 @@ export class Physics {
     const pos_T = V3Sub(V3Add(ball.position, V3TimeScalar(ball.velocity, t)), V3TimeScalar(vel_Unit, u_r*g*t*t*0.5))
     const vel_T = V3Sub(ball.velocity, V3TimeScalar(vel_Unit, u_r*g*t))
     const spin_not_R = V3TimeScalar(vel_T, 1/R)
-    const spin_T = V3RotateOn2D(spin_not_R, Math.PI / 2)
+    const spin_T = V3RotateOn2D(spin_not_R, Math.PI *.5)
 
     spin_T.z = this.get_perpendicular_spin_state(ball.spin, t).z
     ball.position = pos_T
@@ -383,8 +387,8 @@ export class Physics {
     const v2 = {...ball2.velocity}
     const velRelative = V3Sub(ball1.velocity, ball2.velocity)
     const velValue = V3Val(velRelative)
-    const n = V3ToUnit(V3Sub(ball1.position, ball2.position))
-    const t = V3RotateOn2D(n, -Math.PI/2)
+    const n = V3ToUnit(V3Sub(ball2.position, ball1.position))
+    const t = V3RotateOn2D(n, Math.PI/2)
 
     const beta = V2Angle(velRelative, n)
 
