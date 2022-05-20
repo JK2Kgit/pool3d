@@ -77,10 +77,10 @@ export function getStartingBalls(gl: WebGL2RenderingContext, pi: any){
 
         //new Ball(gl, pi, black, V23(V2A(triangleTop, {x: .8, y: 0}), 0), 3, 2),
 
-        /*new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: .22}), 0), 2, 2),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: .22}), 0), 2, 2),
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: -.22}), 0), 1, 3),
 
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: .44}), 0), 1, 4),
+        /*new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: .44}), 0), 1, 4),
         new Ball(gl, pi, black, V23(V2A(triangleTop, {x: .8, y: 0}), 0), 3, 5),
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: -.44}), 0), 2, 6),*/
 

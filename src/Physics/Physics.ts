@@ -84,7 +84,7 @@ export class Physics {
       }
 
       dtPrime = dt - (event.tau - evenetTime)
-      console.log(event, o1, JSON.parse(JSON.stringify(this.balls)))
+      //console.log(event, o1, JSON.parse(JSON.stringify(this.balls)))
       this.balls = oldHistory.balls[oldHistory.index[i]]
     }
 
@@ -117,10 +117,12 @@ export class Physics {
     }
     {
       let ev = this.getMinBallBallEvent()
-      if(ev.tau < eventMin.tau)
+      if(ev.tau < eventMin.tau){
         eventMin = ev
+        console.log(ev)
+      }
     }
-    console.log(JSON.parse(JSON.stringify(eventMin)))
+    //console.log(JSON.parse(JSON.stringify(eventMin)))
 
     return eventMin
   }
@@ -209,7 +211,7 @@ export class Physics {
   private static getCollisionTime(ball1: Ball, ball2: Ball): number {
     let c1 = ball1.position
     let c2 = ball2.position
-    //console.log(JSON.parse(JSON.stringify( ball1)), JSON.parse(JSON.stringify( ball2)))
+    let lg = [JSON.parse(JSON.stringify( ball1)), JSON.parse(JSON.stringify( ball2))]
 
     let a1 = V2(0, 0)
     let b1 = V2(0, 0)
@@ -257,10 +259,10 @@ export class Physics {
     const d = 2*B.x*C.x  +  2*B.y*C.y
     const e = C.x*C.x  +  C.y*C.y  -  4*R*R
 
-    //console.log(abcde)
-    let result = solveQuartic(a,b,c,d,e).filter((res)=> res.im < TOL && res.re > TOL).map((res) => res.re)
-
-    //console.log(result)
+    let result = solveQuartic(a,b,c,d,e).filter((res)=> Math.abs(res.im) < TOL && res.re > TOL).map((res) => res.re)
+    //console.log(result, a,b,c,d,e, A, B, C)
+    if(lg[0].position.x == 1.8279699037845252)
+      console.log(result.length > 0 ? Math.min(...result) : Infinity, lg, a1, a2,b1,b2,c1,c2,result, a,b,c,d,e, A, B, C)
     return result.length > 0 ? Math.min(...result) : Infinity
   }
 
@@ -333,6 +335,7 @@ export class Physics {
 
   private static apply_ball_slide(ball: Ball, t: number){
     const phi = V2Angle(ball.velocity)
+
     const pos_R = V3RotateOn2D(ball.position, -phi)
     const vel_R = V3RotateOn2D(ball.velocity, -phi)
     const spin_R = V3RotateOn2D(ball.spin, -phi)
@@ -345,7 +348,7 @@ export class Physics {
 
     const pos_B = {
       x: vel_R.x*t - .5*u_s*g*t*t * vel_U.x,
-      y: -.5*u_s*g*t*t* vel_U.y,
+      y: -.5*u_s*g*t*t*vel_U.y,
       z: 0
     }
     const vel_B = V3Sub(vel_R, V3TimeScalar(vel_U, u_s*g*t))
@@ -355,7 +358,9 @@ export class Physics {
     const spin_B = V3Sub(spin_R, V3TimeScalar(cross, scal))
     spin_B.z = this.get_perpendicular_spin_state(ball.spin, t).z
 
-    ball.position = V3Add(ball.position, V3RotateOn2D(pos_B, -phi))
+    const pos_Debug =V3RotateOn2D(pos_B, phi)
+
+    ball.position = V3Add(ball.position, pos_Debug)
     ball.velocity = V3RotateOn2D(vel_B, phi)
     ball.spin = V3RotateOn2D(spin_B, phi)
   }
@@ -392,9 +397,11 @@ export class Physics {
 
     const beta = V2Angle(velRelative, n)
 
+    const s1 = velValue*Math.sin(beta)
+    const s2 = velValue*Math.cos(beta)
 
-    ball1.velocity = V3Add(V3TimeScalar(t, velValue*Math.sin(beta)), v2)
-    ball2.velocity = V3Add(V3TimeScalar(n, velValue*Math.cos(beta)), v2)
+    ball1.velocity = V3Add(V3TimeScalar(t, s1), v2)
+    ball2.velocity = V3Add(V3TimeScalar(n, s2), v2)
 
     ball1.state = BallState.sliding
     ball2.state = BallState.sliding

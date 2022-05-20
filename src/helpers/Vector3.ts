@@ -11,7 +11,7 @@ export function V3(x: number, y: number, z: number){
 }
 
 export function V3ToArrayWebgl(a: Vector3): number[]{
-  return [-a.y, a.z, -a.x]
+  return [a.y, a.z, -a.x]
 }
 export function V3TimeScalar(a: Vector3, k: number): Vector3{
   return {x: a.x * k, y: a.y * k, z: a.z * k}

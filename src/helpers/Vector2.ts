@@ -18,5 +18,9 @@ export function Vector2Add(vec: Vector2, vec2: Vector2): Vector2 {
 }
 
 export function V2Angle(vec: Vector2, vec2: Vector2 = {x: 1, y: 0}){
-  return Math.atan2(vec.y, vec.x) - Math.atan2(vec2.y, vec2.x)
+  const ang = Math.atan2(vec.y, vec.x) - Math.atan2(vec2.y, vec2.x)
+  if(ang < 0){
+    return Math.PI*2 + ang;
+  }
+  return ang
 }
