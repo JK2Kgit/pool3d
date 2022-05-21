@@ -1,20 +1,28 @@
 import {Ball} from "../GameObjects/Ball";
 import {Hit} from "../helpers/Hit";
 import {V3, V3Add, V3Cross, V3RotateOn2D, V3Sub, V3TimeScalar, V3ToUnit, V3Val, Vector3} from "../helpers/Vector3";
-import {BALL_SIZE, TOL, UPS} from "../helpers/Constants";
+import {BALL_SIZE, PHYSICS_SCALE, TOL, UPS} from "../helpers/Constants";
 import {BallState} from "../helpers/helpers";
 import {EventType, PoolEvent} from "./Event";
 import {V2, V2Angle} from "../helpers/Vector2";
-import {solveQuartic} from "../helpers/Polynomia";
+import {allRoots} from "flo-poly";
+import {Rail} from "../GameObjects/Rail";
 
 const g = 9.81 // gravity
-const R = BALL_SIZE
+const R = BALL_SIZE/PHYSICS_SCALE
 const u_s = 0.2 // 0.2 sliding friction
 const u_r = 0.01 // 0.01 rolling friction
 const u_sp = 10 * 2/5*R/9 // spinning friction
 
+const DEBUG = false
 
 export class Physics {
+  rails: Rail[] = [
+    {lx:10, ly:0, lo:5},
+    {lx:10, ly:0, lo:-5},
+    {lx:0, ly:10, lo:5},
+    {lx:0, ly:10, lo:-5},
+  ]
   balls: Ball[] // [0] is white
   time: number = 0
   ballsFuture: Ball[][] = []
@@ -27,6 +35,14 @@ export class Physics {
     this.balls = balls
     this.frames = frames
     this.ballsFuture.push(this.balls.map((b) => b.clone()))
+    if(DEBUG){
+      document.addEventListener("keypress", (e)=>{
+        if(e.code == "Backquote"){
+          this.ballsFuture.shift()
+          console.log(this.history.index.shift() ,this.ballsFuture)
+        }
+      })
+    }
   }
 
   isCalculating(): boolean{
@@ -34,6 +50,9 @@ export class Physics {
   }
 
   getPositionsNew(): Ball[]{
+    if(DEBUG){
+      return this.ballsFuture[0]
+    }
     console.log(this.ballsFuture[0][0].state)
     if(this.ballsFuture.length < 2){
       this.balls = this.ballsFuture[0]
@@ -87,8 +106,6 @@ export class Physics {
       //console.log(event, o1, JSON.parse(JSON.stringify(this.balls)))
       this.balls = oldHistory.balls[oldHistory.index[i]]
     }
-
-    this.ballsFuture = this.history.balls
   }
 
   simulateEvents(){
@@ -96,6 +113,8 @@ export class Physics {
     this.timestamp(0)
 
     while (event.tau < Infinity){
+      if(this.n == 22)
+        debugger
       event = this.getNextEvent()
       this.evolve(event.tau)
 
@@ -103,7 +122,9 @@ export class Physics {
       this.timestamp(event.tau, event)
     }
     console.log(JSON.parse(JSON.stringify(this.history)))
-    this.generatePositions(1/ UPS)
+    if(!DEBUG)
+      this.generatePositions(1/ UPS)
+    this.ballsFuture = this.history.balls
 
 
   }
@@ -117,12 +138,19 @@ export class Physics {
     }
     {
       let ev = this.getMinBallBallEvent()
+      //console.log(JSON.parse(JSON.stringify(eventMin)), JSON.parse(JSON.stringify(ev)), this.n, ev.tau < eventMin.tau)
       if(ev.tau < eventMin.tau){
         eventMin = ev
-        console.log(ev)
+        //console.log(ev)
       }
     }
-    //console.log(JSON.parse(JSON.stringify(eventMin)))
+    {
+      let ev = this.getMinBallRailEvent()
+      if(ev.tau < eventMin.tau){
+        eventMin = ev
+      }
+
+    }
 
     return eventMin
   }
@@ -163,9 +191,9 @@ export class Physics {
   getMinBallBallEvent(): PoolEvent{
     let tauMin = Infinity
     let agentIds: number[] = []
-    this.balls.forEach((ball1, i1) => {
-      this.balls.forEach((ball2, i2) => {
-        if (i1 >= i2)
+    this.balls.forEach((ball1, i) => {
+      this.balls.forEach((ball2, j) => {
+        if (i >= j)
           return;
 
         if (ball1.state == BallState.stationary && ball2.state == BallState.stationary)
@@ -181,6 +209,12 @@ export class Physics {
     })
 
     return new PoolEvent(EventType.BallBall, agentIds, tauMin)
+  }
+
+  getMinBallRailEvent(): PoolEvent{
+    let tauMin = Infinity
+    let agentIds: number[] = []
+
   }
 
   evolve(dt: number){
@@ -259,10 +293,13 @@ export class Physics {
     const d = 2*B.x*C.x  +  2*B.y*C.y
     const e = C.x*C.x  +  C.y*C.y  -  4*R*R
 
-    let result = solveQuartic(a,b,c,d,e).filter((res)=> Math.abs(res.im) < TOL && res.re > TOL).map((res) => res.re)
+    let result = allRoots([a,b,c,d,e]).filter((r) => r>TOL)
     //console.log(result, a,b,c,d,e, A, B, C)
-    if(lg[0].position.x == 1.8279699037845252)
-      console.log(result.length > 0 ? Math.min(...result) : Infinity, lg, a1, a2,b1,b2,c1,c2,result, a,b,c,d,e, A, B, C)
+    if(ball1.id == 0 && ball2.id == 5){
+      //console.log(result.length > 0 ? Math.min(...result) : Infinity, lg, a1, a2,b1,b2,c1,c2,result,  A, B, C)
+      //console.log(a,b,c,d,e)
+      console.log(lg, result, [ball1.id, ball2.id])
+    }
     return result.length > 0 ? Math.min(...result) : Infinity
   }
 
@@ -334,6 +371,8 @@ export class Physics {
   }
 
   private static apply_ball_slide(ball: Ball, t: number){
+    if(t == 0)
+      return
     const phi = V2Angle(ball.velocity)
 
     const pos_R = V3RotateOn2D(ball.position, -phi)
@@ -366,12 +405,14 @@ export class Physics {
   }
 
   private static apply_ball_roll(ball: Ball, t: number){
+    if(t == 0)
+      return
     const vel_Unit = V3ToUnit(ball.velocity)
 
-    const pos_T = V3Sub(V3Add(ball.position, V3TimeScalar(ball.velocity, t)), V3TimeScalar(vel_Unit, u_r*g*t*t*0.5))
+    const pos_T =V3Add(ball.position, V3Sub(V3TimeScalar(ball.velocity, t), V3TimeScalar(vel_Unit, u_r*g*t*t*0.5)))
     const vel_T = V3Sub(ball.velocity, V3TimeScalar(vel_Unit, u_r*g*t))
     const spin_not_R = V3TimeScalar(vel_T, 1/R)
-    const spin_T = V3RotateOn2D(spin_not_R, Math.PI *.5)
+    const spin_T = V3RotateOn2D(spin_not_R, Math.PI/2)
 
     spin_T.z = this.get_perpendicular_spin_state(ball.spin, t).z
     ball.position = pos_T
@@ -380,6 +421,8 @@ export class Physics {
   }
 
   private static apply_ball_spin(ball: Ball, t: number) {
+    if(t == 0)
+      return
     ball.spin.z = this.get_perpendicular_spin_state(ball.spin, t).z
   }
 

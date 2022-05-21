@@ -8,7 +8,7 @@ import {Vector3, V3TimeScalar} from "./helpers/Vector3";
 import {getStartingBalls} from "./helpers/helpers";
 import {Hit} from "./helpers/Hit";
 import {Physics} from "./Physics/Physics";
-import {UPS, WIDTH} from "./helpers/Constants";
+import {PHYSICS_SCALE, UPS, WIDTH} from "./helpers/Constants";
 
 export class Game {
   canvas: HTMLCanvasElement
@@ -95,7 +95,7 @@ export class Game {
 
   update(dt: number) {
     if(!this.physics.isCalculating()){
-      this.centerPosition = this.balls[0].position
+      this.centerPosition = V3TimeScalar(this.balls[0].position, PHYSICS_SCALE)
     }
     this.balls = this.physics.getPositionsNew()
     this.calculateCameraPosition()

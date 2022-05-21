@@ -8,4 +8,5 @@ export const MULTIPLAYER = 0.6
 export const WHITE = [1.0, 1.0, 1.0, 1.0]
 export const BALL_SIZE = .2
 export const UPS = 144
-export const TOL = 1e-10
+export const TOL = 1e-8
+export const PHYSICS_SCALE = 1

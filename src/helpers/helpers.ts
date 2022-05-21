@@ -1,6 +1,7 @@
 import {Ball} from "../GameObjects/Ball";
 import {Vector2, Vector2Add, Vector2ToVector3} from "./Vector2";
 import {Vector3} from "./Vector3";
+import {EPSILON} from "./Constants";
 
 export function createProgramInfo(gl: WebGL2RenderingContext, ids: string[]) {
     const programs = ids.map((id) => (document.getElementById(id) as HTMLScriptElement).text)
@@ -68,6 +69,7 @@ export function getStartingBalls(gl: WebGL2RenderingContext, pi: any){
     const white = [1.0, 1.0, 1.0, 1.0]
     const black = [0.0, 0.0, 0.0, 1.0]
     const red = [0.41, 0.22, 0.17, 1.0]
+    const DIFF = 0.01
     // 0 - white;  1 - color;  2 - grid;  3 - black    (type)
     return [
         new Ball(gl, pi, white, V23(whitePos, 0), 0, 0),
@@ -77,19 +79,19 @@ export function getStartingBalls(gl: WebGL2RenderingContext, pi: any){
 
         //new Ball(gl, pi, black, V23(V2A(triangleTop, {x: .8, y: 0}), 0), 3, 2),
 
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: .22}), 0), 2, 2),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4+DIFF, y: .22}), 0), 2, 2),
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .4, y: -.22}), 0), 1, 3),
 
-        /*new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: .44}), 0), 1, 4),
-        new Ball(gl, pi, black, V23(V2A(triangleTop, {x: .8, y: 0}), 0), 3, 5),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: -.44}), 0), 2, 6),*/
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8+DIFF*2, y: .44}), 0), 1, 4),
+        new Ball(gl, pi, black, V23(V2A(triangleTop, {x: .8+DIFF, y: 0}), 0), 3, 5),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .8, y: -.44}), 0), 2, 6),
 
-        /*new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .66, y: -1.2}), 0), 2, 7),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .22, y: -1.2}), 0), 1, 8),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.22, y: -1.2}), 0), 2, 9),
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.66, y: -1.2}), 0), 1, 10),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: 1.2+DIFF*3, y: .66}), 0), 2, 7),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: 1.2+DIFF*2, y: .22}), 0), 1, 8),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: 1.2+DIFF, y: -.22}), 0), 2, 9),
+        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: 1.2, y: -.66}), 0), 1, 10),
 
-        new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .88, y: -1.6}), 0), 1, 11),
+        /*new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .88, y: -1.6}), 0), 1, 11),
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: .44, y: -1.6}), 0), 1, 12),
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: 0, y: -1.6}), 0), 2, 13),
         new Ball(gl, pi, red, V23(V2A(triangleTop, {x: -.44, y: -1.6}), 0), 1, 14),

@@ -1,7 +1,7 @@
 import {GameObject} from "./GameObject";
 import {V3TimeScalar, V3ToArrayWebgl, Vector3} from "../helpers/Vector3";
 import {BallPosVelSpin, BallState, pointsOnCircle} from "../helpers/helpers";
-import {BALL_SIZE, FOV, WHITE} from "../helpers/Constants";
+import {BALL_SIZE, FOV, PHYSICS_SCALE, WHITE} from "../helpers/Constants";
 import * as mat4 from "../matrix/mat4";
 import {Transform} from "./Transform";
 import {IAgent} from "../Physics/IAgent";
@@ -98,7 +98,7 @@ export class Ball extends GameObject implements IAgent{
     const gl = this.gl
     const buffersArr = this.buffers
     const programInfo = this.programInfo
-    const position = this.position
+    const position = V3TimeScalar(this.position, PHYSICS_SCALE)
 
     const fieldOfView = FOV * Math.PI / 180;
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
