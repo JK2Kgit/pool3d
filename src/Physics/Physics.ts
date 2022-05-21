@@ -1,12 +1,12 @@
 import {Ball} from "../GameObjects/Ball";
 import {Hit} from "../helpers/Hit";
 import {V3, V3Add, V3Cross, V3RotateOn2D, V3Sub, V3TimeScalar, V3ToUnit, V3Val, Vector3} from "../helpers/Vector3";
-import {BALL_SIZE, PHYSICS_SCALE, TOL, UPS} from "../helpers/Constants";
+import {BALL_SIZE, PHYSICS_SCALE, TABLE_DEPTH, TABLE_WIDTH, TOL, UPS} from "../helpers/Constants";
 import {BallState} from "../helpers/helpers";
 import {EventType, PoolEvent} from "./Event";
 import {V2, V2Angle} from "../helpers/Vector2";
 import {allRoots} from "flo-poly";
-import {Rail} from "../GameObjects/Rail";
+import {Rail, RAIL_ID, RV2} from "../GameObjects/Rail";
 
 const g = 9.81 // gravity
 const R = BALL_SIZE/PHYSICS_SCALE
@@ -15,13 +15,15 @@ const u_r = 0.01 // 0.01 rolling friction
 const u_sp = 10 * 2/5*R/9 // spinning friction
 
 const DEBUG = false
+const COLLISION = true
+const RAIL_COLLISION = true
 
 export class Physics {
   rails: Rail[] = [
-    {lx:10, ly:0, lo:5},
-    {lx:10, ly:0, lo:-5},
-    {lx:0, ly:10, lo:5},
-    {lx:0, ly:10, lo:-5},
+    {lx:0, ly:1, lo:-TABLE_WIDTH/2, id: RAIL_ID.LEFT},
+    {lx:0, ly:1, lo:TABLE_WIDTH/2, id: RAIL_ID.RIGHT},
+    {lx:1, ly:0, lo:-TABLE_DEPTH/2, id: RAIL_ID.BOTTOM},
+    {lx:1, ly:0, lo:TABLE_DEPTH/2, id: RAIL_ID.TOP},
   ]
   balls: Ball[] // [0] is white
   time: number = 0
@@ -113,8 +115,6 @@ export class Physics {
     this.timestamp(0)
 
     while (event.tau < Infinity){
-      if(this.n == 22)
-        debugger
       event = this.getNextEvent()
       this.evolve(event.tau)
 
@@ -136,7 +136,7 @@ export class Physics {
       if(ev.tau < eventMin.tau)
         eventMin = ev
     }
-    {
+    if(COLLISION){
       let ev = this.getMinBallBallEvent()
       //console.log(JSON.parse(JSON.stringify(eventMin)), JSON.parse(JSON.stringify(ev)), this.n, ev.tau < eventMin.tau)
       if(ev.tau < eventMin.tau){
@@ -144,9 +144,10 @@ export class Physics {
         //console.log(ev)
       }
     }
-    {
+    if(RAIL_COLLISION){
       let ev = this.getMinBallRailEvent()
       if(ev.tau < eventMin.tau){
+        console.log(ev, this.balls[ev.agentsIds[0]].clone(), this.rails[ev.agentsIds[1]])
         eventMin = ev
       }
 
@@ -214,7 +215,21 @@ export class Physics {
   getMinBallRailEvent(): PoolEvent{
     let tauMin = Infinity
     let agentIds: number[] = []
+    this.balls.forEach((ball) => {
+      if(ball.state == BallState.stationary)
+        return
 
+      this.rails.forEach((rail) => {
+        let tau = Physics.getRailCollisionTime(ball, rail)
+
+        if(tau < tauMin){
+          tauMin = tau
+          agentIds = [ball.id, rail.id]
+        }
+      })
+    })
+
+    return new PoolEvent(EventType.BallRail, agentIds, tauMin)
   }
 
   evolve(dt: number){
@@ -229,6 +244,13 @@ export class Physics {
 
       Physics.applyBallBallCollision(ball1, ball2)
     }
+    if(event.type == EventType.BallRail){
+      let ball = this.balls[event.agentsIds[0]]
+      let rail = this.rails[event.agentsIds[1]]
+
+      Physics.applyBallRailCollision(ball, rail)
+    }
+
   }
 
   hit(hit: Hit){
@@ -300,6 +322,35 @@ export class Physics {
       //console.log(a,b,c,d,e)
       console.log(lg, result, [ball1.id, ball2.id])
     }
+    return result.length > 0 ? Math.min(...result) : Infinity
+  }
+
+  private static getRailCollisionTime(ball: Ball, r: Rail): number {
+    if(ball.state == BallState.stationary || ball.state == BallState.spining)
+      return Infinity
+
+    const phi = V2Angle(ball.velocity)
+    const v = V3Val(ball.velocity)
+    const u = ball.state == BallState.rolling ? V3(1,0,0) : V3RotateOn2D(V3ToUnit(Physics.getRelativeVelocity(ball.velocity, ball.spin)), -phi)
+
+    let a = V2(0, 0)
+    let b = V2(0, 0)
+    const friction = ball.state == BallState.rolling ? u_r : u_s
+
+    a.x = -0.5* friction*g*(u.x*Math.cos(phi) - u.y*Math.sin(phi))
+    a.y = -0.5* friction*g*(u.x*Math.sin(phi) + u.y*Math.cos(phi))
+
+    b.x = v*Math.cos(phi)
+    b.y = v*Math.sin(phi)
+    let c = ball.position
+
+    let A = r.lx*a.x + r.ly*a.y
+    let B = r.lx*b.x + r.ly*b.y
+
+    let C1 = r.lo + r.lx*c.x + r.ly*c.y + R*Math.sqrt(r.lx**2 + r.ly**2)
+    let C2 = r.lo + r.lx*c.x + r.ly*c.y - R*Math.sqrt(r.lx**2 + r.ly**2)
+
+    let result = [...allRoots([A,B,C1]), ...allRoots([A,B,C2])].filter((r) => r>TOL)
     return result.length > 0 ? Math.min(...result) : Infinity
   }
 
@@ -448,5 +499,13 @@ export class Physics {
 
     ball1.state = BallState.sliding
     ball2.state = BallState.sliding
+  }
+
+  private static applyBallRailCollision(ball:Ball, rail: Rail){
+    let phi = V2Angle(RV2(rail))
+
+    let vel_R = V3RotateOn2D(ball.velocity, -phi)
+    vel_R.x*=-1
+    ball.velocity = V3RotateOn2D(vel_R, phi)
   }
 }

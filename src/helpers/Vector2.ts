@@ -8,6 +8,9 @@ export type Vector2 = {
 export function V2(x: number, y:number){
   return{x,y}
 }
+export function V2Val(a: Vector2): number{
+  return Math.sqrt(a.x*a.x + a.y*a.y)
+}
 
 export function Vector2ToVector3(vec: Vector2, z: number): Vector3 {
   return {x: vec.x, y: vec.y, z: z}
