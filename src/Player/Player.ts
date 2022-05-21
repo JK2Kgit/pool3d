@@ -2,6 +2,7 @@ import {IPlayer} from "./IPlayer";
 import {Transform} from "../GameObjects/Transform";
 import {IInputMethod} from "./IInputMethod";
 import {clamp} from "../helpers/helpers";
+import {V3RotateOn2D} from "../helpers/Vector3";
 
 export class Player extends IPlayer{
   inputMethod: IInputMethod
@@ -34,7 +35,7 @@ export class Player extends IPlayer{
 
   hitHandler(){
     this.hitCallback({
-      direction: {x: 1, y: .05, z: 0},
+      direction: V3RotateOn2D({x: 1, y: 0, z: 0}, this.cameraTransformInv.rotation.y),
       positionOnBall: {x: 0, y: 0},
       strength: this.strength
     })
