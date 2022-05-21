@@ -1,7 +1,6 @@
 import {Ball} from "../GameObjects/Ball";
 import {Vector2, Vector2Add, Vector2ToVector3} from "./Vector2";
 import {Vector3} from "./Vector3";
-import {EPSILON} from "./Constants";
 
 export function createProgramInfo(gl: WebGL2RenderingContext, ids: string[]) {
     const programs = ids.map((id) => (document.getElementById(id) as HTMLScriptElement).text)

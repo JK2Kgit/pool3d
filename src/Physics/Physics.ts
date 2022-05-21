@@ -31,7 +31,6 @@ export class Physics {
   history: {balls: Ball[][], index: number[], time: number[], event: (PoolEvent | undefined)[]} = {balls: [], event: [], index: [], time: []}
   frames = 0
   n = -1
-  lastEvenet: PoolEvent | undefined = undefined
 
   constructor(balls: Ball[], frames: number) {
     this.balls = balls
@@ -53,9 +52,9 @@ export class Physics {
 
   getPositionsNew(): Ball[]{
     if(DEBUG){
+      console.log(this.ballsFuture[0][0].state)
       return this.ballsFuture[0]
     }
-    console.log(this.ballsFuture[0][0].state)
     if(this.ballsFuture.length < 2){
       this.balls = this.ballsFuture[0]
       return this.ballsFuture[0]
@@ -78,7 +77,6 @@ export class Physics {
   }
 
   generatePositions(dt: number){
-    console.log("AAAAAAAAAAAAAAAAA")
     const oldHistory = this.history
     this.history = {balls: [], event: [], index: [], time: []}
     this.n = -1
@@ -88,24 +86,22 @@ export class Physics {
     let dtPrime = dt
     for (let i = 0; i < oldHistory.event.length; i++) {
       const event = oldHistory.event[oldHistory.index[i]]
-      const o1 = JSON.parse(JSON.stringify(this.balls))
       if(event == undefined)
         continue
 
       if(event.tau == Infinity)
         break;
 
-      let evenetTime = 0
-      while (evenetTime < (event.tau - dtPrime)){
+      let eventTime = 0
+      while (eventTime < (event.tau - dtPrime)){
         this.balls = oldHistory.balls[oldHistory.index[i - 1]].map((b) => b.clone())
-        this.evolve(evenetTime + dtPrime)
-        this.timestamp(evenetTime + dtPrime, event)
-        evenetTime += dtPrime
+        this.evolve(eventTime + dtPrime)
+        this.timestamp(eventTime + dtPrime, event)
+        eventTime += dtPrime
         dtPrime = dt
       }
 
-      dtPrime = dt - (event.tau - evenetTime)
-      //console.log(event, o1, JSON.parse(JSON.stringify(this.balls)))
+      dtPrime = dt - (event.tau - eventTime)
       this.balls = oldHistory.balls[oldHistory.index[i]]
     }
   }
@@ -256,7 +252,7 @@ export class Physics {
   hit(hit: Hit){
     if(this.isCalculating()) return;
     this.balls[0].velocity = V3TimeScalar(hit.direction, hit.strength)
-    this.balls[0].spin = {x: Math.PI*0, y: 0, z: 0} // MAth.Pi*4
+    this.balls[0].spin = {x: 0, y: 0, z: 0} // MAth.Pi*4 // TODO do something with it
     this.balls[0].state = BallState.sliding// MAth.Pi*4
     this.history = {balls: [], event: [], index: [], time: []}
     console.log("start")
@@ -426,7 +422,6 @@ export class Physics {
       return
     const phi = V2Angle(ball.velocity)
 
-    const pos_R = V3RotateOn2D(ball.position, -phi)
     const vel_R = V3RotateOn2D(ball.velocity, -phi)
     const spin_R = V3RotateOn2D(ball.spin, -phi)
 
@@ -444,8 +439,8 @@ export class Physics {
     const vel_B = V3Sub(vel_R, V3TimeScalar(vel_U, u_s*g*t))
 
     const cross = V3Cross(vel_U, V3(0,0,1))
-    const scal = (2.5/R)*u_s*g*t
-    const spin_B = V3Sub(spin_R, V3TimeScalar(cross, scal))
+    const scale = (2.5/R)*u_s*g*t
+    const spin_B = V3Sub(spin_R, V3TimeScalar(cross, scale))
     spin_B.z = this.get_perpendicular_spin_state(ball.spin, t).z
 
     const pos_Debug =V3RotateOn2D(pos_B, phi)
