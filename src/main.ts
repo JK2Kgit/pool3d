@@ -4,7 +4,6 @@ import {Player} from "./Player/Player";
 import {AIPlayer} from "./Player/AIPlayer";
 import {KeyboardInput} from "./Player/KeyboardInput";
 import {HEIGHT, WIDTH} from "./helpers/Constants";
-import {allRoots} from "flo-poly";
 
 const gameCanvas = document.querySelector<HTMLCanvasElement>('#gameCanvas')!
 const textCanvas = document.querySelector<HTMLCanvasElement>('#textCanvas')!
@@ -27,4 +26,3 @@ playButton.addEventListener('click', () => {
 })
 
 playButton.click()
-console.log(allRoots)

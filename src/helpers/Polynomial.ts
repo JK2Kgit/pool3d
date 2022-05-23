@@ -195,9 +195,7 @@ function removeLeadingZeros(p: number[]): number[] {
   return p;
 }
 
-
-
-function allRoots(
+export function allRoots(
   p: number[],
   lb = Number.NEGATIVE_INFINITY,
   ub = Number.POSITIVE_INFINITY): number[] {
@@ -286,6 +284,3 @@ function allRoots(
 
   return is;
 }
-
-
-export { allRoots }
