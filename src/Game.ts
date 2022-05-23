@@ -28,7 +28,6 @@ export class Game {
   cameraTransform: Transform =  new Transform({x: 0, y: 0, z: 0}, {x: Math.PI/5.7, y: 0, z: 0})
   physics: Physics
   change: boolean = true
-  physicsMultiplayer: number = 5
 
   constructor(canvas: HTMLCanvasElement, textCanvas: HTMLCanvasElement, player0: IPlayer, player1: IPlayer) {
     this.canvas = canvas
@@ -87,7 +86,30 @@ export class Game {
     const mult = WIDTH / 562
     const half = WIDTH / 2
     this.textContext.fillStyle = '#588d43';
-    this.textContext.fillRect(half - 14*mult, 0, 28*mult, 26*mult)
+    this.textContext.fillRect(half - 14*mult, 0, 28*mult, 28*mult)
+
+    const strength = this.players[this.currentPlayer].getStrength()
+
+    this.textContext.fillStyle = '#000000';
+    this.textContext.fillRect(half + 28*mult, 0, 140*mult, 14*mult)
+
+    this.textContext.fillStyle = '#ffffff';
+    this.textContext.fillRect(half + 42*mult, 3*mult, 112*mult, 8*mult)
+
+    this.textContext.fillStyle = '#598c42';
+    this.textContext.fillRect(half + 31*mult, 3*mult, 8*mult, 2*mult)
+    this.textContext.fillRect(half + 31*mult, 9*mult, 8*mult, 2*mult)
+
+    this.textContext.fillRect(half + 157*mult, 3*mult, 8*mult, 2*mult)
+    this.textContext.fillRect(half + 157*mult, 9*mult, 8*mult, 2*mult)
+
+
+
+    this.textContext.fillStyle = '#69382b';
+    this.textContext.fillRect(half + 42*mult, 3*mult,  Math.round(strength*112*mult), 8*mult)
+
+    this.textContext.fillStyle = '#000000';
+    this.textContext.fillRect(half + (41+strength*112)*mult, 0, 3*mult, 14*mult)
 
 
 

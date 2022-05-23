@@ -9,6 +9,7 @@ export abstract class IPlayer{
     this.cameraTransformInv = new Transform(V3TimeScalar(t.position, -1), t.rotation)
   }
   public abstract handleInput(dt:number): {T: Transform, C: boolean}
+  public abstract getStrength(): number
 }
 
 export class PlayerInput {

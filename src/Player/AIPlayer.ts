@@ -5,4 +5,8 @@ export class AIPlayer extends IPlayer{
   handleInput(_dt: number): {T: Transform, C: boolean} {
     return {T: this.cameraTransformInv, C: false}
   }
+
+  getStrength(): number {
+    return -1;
+  }
 }
