@@ -37,6 +37,13 @@ export function V3AbsLessThan(a: Vector3, value: number): boolean{
 export function V3Clamp(a: Vector3, min: number, max: number): Vector3{
   return {x: clamp(a.x, min, max), y: clamp(a.y, min, max), z: clamp(a.z, min, max)}
 }
+export function V3ClampLength(a: Vector3, max: number): Vector3{
+  const len = V3Val(a)
+  if(len < max)
+    return a
+  else
+    return V3TimeScalar(V3ToUnit(a), max)
+}
 export function V3Val(a: Vector3): number{
   return Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z)
 }

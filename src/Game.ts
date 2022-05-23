@@ -1,14 +1,15 @@
 import {IPlayer} from "./Player/IPlayer";
 import {Table} from "./GameObjects/Table";
 import * as wh from "./helpers/helpers"
+import {GameStage, getStartingBalls, PlayerColors} from "./helpers/helpers"
 import {Transform} from "./GameObjects/Transform";
 import {SkyBox} from "./GameObjects/SkyBox";
 import {Ball} from "./GameObjects/Ball";
-import {Vector3, V3TimeScalar} from "./helpers/Vector3";
-import {getStartingBalls} from "./helpers/helpers";
+import {V3Add, V3TimeScalar, Vector3} from "./helpers/Vector3";
 import {Hit} from "./helpers/Hit";
 import {Physics} from "./Physics/Physics";
-import {PHYSICS_SCALE, UPS, WIDTH} from "./helpers/Constants";
+import {COORDS, FLICKER, PHYSICS_SCALE, SIZE_MULT, UPS, WHITE_BALL_POS, WIDTH} from "./helpers/Constants";
+
 
 export class Game {
   canvas: HTMLCanvasElement
@@ -27,7 +28,21 @@ export class Game {
   programInfo: any
   cameraTransform: Transform =  new Transform({x: 0, y: 0, z: 0}, {x: Math.PI/5.7, y: 0, z: 0})
   physics: Physics
+  wasCalculating: boolean = false
   change: boolean = true
+  showStrength: boolean = true
+  images: HTMLImageElement[];
+  flicker: number = 0
+  stage: GameStage = GameStage.BallPlacement
+  ballInHoles: Ball[] = []
+  firstHit: Ball | undefined = undefined
+
+  player1Color: PlayerColors = PlayerColors.Undefined
+  get player2Color(): PlayerColors {
+    if(this.player1Color == PlayerColors.Undefined)
+      return PlayerColors.Undefined
+    return this.player1Color == PlayerColors.PlayerClear ? PlayerColors.PlayerDotted : PlayerColors.PlayerClear
+  }
 
   constructor(canvas: HTMLCanvasElement, textCanvas: HTMLCanvasElement, player0: IPlayer, player1: IPlayer) {
     this.canvas = canvas
@@ -45,13 +60,19 @@ export class Game {
     this.skyBox = new SkyBox(this.gl, this.programInfo)
     this.balls = balls
     this.centerPosition = this.balls[0].position
-    this.physics = new Physics(this.balls, UPS)
+    this.balls[0].moving = true
+    this.physics = new Physics(this.balls, UPS, this)
+    this.images = [new Image(50*SIZE_MULT*.5, 45*SIZE_MULT*.5), new Image(50*SIZE_MULT*.5, 45*SIZE_MULT*.5), new Image(50*SIZE_MULT*.5, 45*SIZE_MULT*.5)]
+    this.images[0].src = "UIAssets/white.png"
+    this.images[1].src = "UIAssets/clear.png"
+    this.images[2].src = "UIAssets/dotted.png"
   }
 
   start() {
     this.lastFrame = Date.now()
     this.players[this.currentPlayer].setTransform(this.cameraTransform)
     this.players.forEach(p => p.hitCallback = (hit: Hit) => this.handleHit(hit) )
+    this.players.forEach(p => p.placeCallback = (pos: Vector3) => this.handlePlace(pos) )
     this.skyBox.draw(this.cameraTransform.rotation.x)
     window.requestAnimationFrame(() => this.frame());
     //setInterval(() => {this.physics.physicsLoop()}, 10)
@@ -64,59 +85,87 @@ export class Game {
     this.lastFrame = Date.now()
     const fps = Math.round(1 / dt);
 
+    // Game Canvas
+    this.update(dt)
+
     // TextCanvas
     this.textContext.clearRect(0, 0, this.textCanvas.width, this.textCanvas.height);
     this.drawUi(this.currentPlayer, null)
     this.drawFps(fps)
 
-    // Game Canvas
-    this.update(dt)
     window.requestAnimationFrame(() => this.frame());
   }
 
   drawFps(fps: number) {
     this.textContext.fillStyle = 'white';
-    this.textContext.fillRect(0, 0, 200, 60)
+    this.textContext.fillRect(0, 45, 200, 60)
     this.textContext.font = '25px Arial';
     this.textContext.fillStyle = 'red';
-    this.textContext.fillText("FPS: " + fps, 10, 30);
+    this.textContext.fillText("FPS: " + fps, 10, 75);
   }
 
   drawUi(_playerId: number, _playerOneColor: any){
+    this.flicker += 1
     const mult = WIDTH / 562
     const half = WIDTH / 2
     this.textContext.fillStyle = '#588d43';
-    this.textContext.fillRect(half - 14*mult, 0, 28*mult, 28*mult)
+    this.textContext.fillRect(half - 11*mult, 0, 25*mult, 22.5*mult)
 
-    const strength = this.players[this.currentPlayer].getStrength()
+    if(this.showStrength){
+      const strength = this.players[this.currentPlayer].getStrength()
 
-    this.textContext.fillStyle = '#000000';
-    this.textContext.fillRect(half + 28*mult, 0, 140*mult, 14*mult)
+      this.textContext.fillStyle = '#000000';
+      this.textContext.fillRect(half + 28*mult, 0, 140*mult, 14*mult)
 
-    this.textContext.fillStyle = '#ffffff';
-    this.textContext.fillRect(half + 42*mult, 3*mult, 112*mult, 8*mult)
+      this.textContext.fillStyle = '#ffffff';
+      this.textContext.fillRect(half + 42*mult, 3*mult, 112*mult, 8*mult)
 
-    this.textContext.fillStyle = '#598c42';
-    this.textContext.fillRect(half + 31*mult, 3*mult, 8*mult, 2*mult)
-    this.textContext.fillRect(half + 31*mult, 9*mult, 8*mult, 2*mult)
+      this.textContext.fillStyle = '#588d43';
+      this.textContext.fillRect(half + 31*mult, 3*mult, 8*mult, 2*mult)
+      this.textContext.fillRect(half + 31*mult, 9*mult, 8*mult, 2*mult)
 
-    this.textContext.fillRect(half + 157*mult, 3*mult, 8*mult, 2*mult)
-    this.textContext.fillRect(half + 157*mult, 9*mult, 8*mult, 2*mult)
-
-
-
-    this.textContext.fillStyle = '#69382b';
-    this.textContext.fillRect(half + 42*mult, 3*mult,  Math.round(strength*112*mult), 8*mult)
-
-    this.textContext.fillStyle = '#000000';
-    this.textContext.fillRect(half + (41+strength*112)*mult, 0, 3*mult, 14*mult)
+      this.textContext.fillRect(half + 157*mult, 3*mult, 8*mult, 2*mult)
+      this.textContext.fillRect(half + 157*mult, 9*mult, 8*mult, 2*mult)
 
 
+      this.textContext.fillStyle = '#69382b';
+      this.textContext.fillRect(half + 42*mult, 3*mult,  Math.round(strength*112*mult), 8*mult)
 
+      this.textContext.fillStyle = '#000000';
+      this.textContext.fillRect(half + (41+strength*112)*mult, 0, 3*mult, 14*mult)
+
+    }
+
+    if(this.player1Color != PlayerColors.Undefined){
+      try{
+        this.textContext.drawImage(this.images[this.player1Color], 0, 0)
+        this.textContext.drawImage(this.images[this.player2Color], WIDTH - 25*mult, 0)
+      }catch (e){
+        console.log(e)
+      }
+
+    }
+
+    let coords = COORDS[this.player1Color == PlayerColors.Undefined ? 0 : 1][this.currentPlayer]
+    this.textContext.fillStyle = '#588d43';
+    this.textContext.fillRect(coords.x, coords.y, 25*mult, 22.5*mult)
+    if(this.flicker > FLICKER / 2)
+      this.textContext.drawImage(this.images[0], coords.x, coords.y)
+
+
+
+    if(this.flicker > FLICKER){
+      this.flicker = 0
+    }
   }
 
   update(dt: number) {
-    if(!this.physics.isCalculating()){
+    if(this.wasCalculating && !this.physics.isCalculating()){
+      this.handleMoveEnd()
+    }
+    this.wasCalculating = this.physics.isCalculating()
+
+    if(!this.wasCalculating && !this.balls[0].moving){
       this.centerPosition = V3TimeScalar(this.balls[0].position, PHYSICS_SCALE)
     }
     this.balls = this.physics.getPositionsNew()
@@ -125,9 +174,11 @@ export class Game {
     this.change = false
 
     if(!this.locked){
-      let res = this.players[this.currentPlayer].handleInput(dt)
+      let res = this.players[this.currentPlayer].handleInput(dt, this.stage)
       this.cameraTransform = res.T
       this.change = res.C
+      if(this.stage == GameStage.BallPlacement)
+        this.balls[0].position = V3Add(WHITE_BALL_POS, res.ball)
     }
   }
 
@@ -136,6 +187,22 @@ export class Game {
     this.table.draw(this.cameraTransform)
     this.balls.forEach((ball) => ball.draw(this.cameraTransform, this.table.position))
 
+  }
+
+  handleHole(ball: Ball){
+    this.ballInHoles.push(ball)
+  }
+
+  handleFirstHit(ball: Ball){
+    this.firstHit = ball
+  }
+
+  handleMoveEnd(){
+    console.log(this.ballInHoles, this.firstHit)
+
+
+    this.ballInHoles = []
+    this.firstHit = undefined
   }
 
   private calculateCameraPosition() {
@@ -192,5 +259,11 @@ export class Game {
 
   private handleHit(hit: Hit){
     this.physics.hit(hit)
+  }
+  private handlePlace(pos: Vector3){
+    this.stage = GameStage.Playing
+    this.table.showSetup = false
+    this.balls[0].moving = false
+    this.balls[0].position = V3Add(WHITE_BALL_POS, pos)
   }
 }

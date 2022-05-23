@@ -1,7 +1,7 @@
 import {GameObject} from "./GameObject";
 import {V3TimeScalar, V3ToArrayWebgl, Vector3} from "../helpers/Vector3";
-import {BallPosVelSpin, BallState, pointsOnCircle} from "../helpers/helpers";
-import {BALL_SIZE, FOV, PHYSICS_SCALE, WHITE} from "../helpers/Constants";
+import {BallColor, BallPosVelSpin, BallState, pointsOnCircle} from "../helpers/helpers";
+import {BALL_SIZE, FLICKER, FOV, PHYSICS_SCALE, WHITE} from "../helpers/Constants";
 import * as mat4 from "../matrix/mat4";
 import {Transform} from "./Transform";
 import {IAgent} from "../Physics/IAgent";
@@ -14,16 +14,19 @@ export class Ball extends GameObject implements IAgent{
   position: Vector3 = {x: 0, y: 0, z: 0}
   //positionHistory: Vector3[] = []
   color: number[] = []
-  type: number = 0 // 0 - white;  1 - color;  2 - grid;  3 - black
+  type: BallColor = BallColor.White // 0 - white;  1 - color;  2 - grid;  3 - black
   velocity: Vector3 = {x: 0, y: 0, z: 0}
   //velocityHistory: Vector3[] = []
   spin: Vector3 = {x: 0, y:0, z:0} // podkręcenie
   //spinHistory: Vector3[] = []
   indices2Length: number = 0
   state: BallState = BallState.stationary
+  visible: boolean = true
+  flicker: number = FLICKER/2
+  moving: boolean = false
 
 
-  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector3, type: number = 0, id:number, skip: boolean = false) {
+  constructor(gl: WebGL2RenderingContext, programInfo: any, color: number[], position: Vector3, type: BallColor = BallColor.White, id:number, skip: boolean = false) {
     super(gl, programInfo);
     if(skip) return;
     this.color = color
@@ -45,6 +48,7 @@ export class Ball extends GameObject implements IAgent{
     ball.spin = {...this.spin} // deep
     ball.state = this.state
     ball.id = this.id
+    ball.moving = this.moving
     //ball.positionHistory = this.positionHistory
     //ball.velocityHistory = this.velocityHistory
     //ball.spinHistory = this.spinHistory
@@ -95,6 +99,13 @@ export class Ball extends GameObject implements IAgent{
   }
 
   draw(cameraTransform: Transform, tablePosition: Vector3){
+    this.flicker += 1
+    if(this.flicker >= FLICKER)
+      this.flicker = 0
+    if((this.flicker > FLICKER/2 )&& this.moving)
+      return;
+    if(!this.visible)
+      return
     const gl = this.gl
     const buffersArr = this.buffers
     const programInfo = this.programInfo
@@ -323,7 +334,7 @@ export class Ball extends GameObject implements IAgent{
 
       {
         const offset = 0;
-        const vertexCount = indices2Length;
+        const vertexCount = [indices2Length, 6][i];
         const type = gl.UNSIGNED_SHORT;
         gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
       }
@@ -336,9 +347,9 @@ export class Ball extends GameObject implements IAgent{
     return [
       [0.0, 0.0, 0.0, ...points],
       [
-        -.6, 0.7, 0.0,
-        -.6, 0.45, 0.0,
-        -0, 0.45, 0.0,
+        -.55, 0.7, 0.0,
+        -.55, 0.5, 0.0,
+        -0, 0.5, 0.0,
         -0, 0.7, 0.0
       ],
       [0.0, 0.0, 0.0, ...points]

@@ -7,6 +7,7 @@ import {EventType, PoolEvent} from "./Event";
 import {V2, V2Angle} from "../helpers/Vector2";
 import {allRoots} from "flo-poly";
 import {Rail, RAIL_ID, RV2} from "../GameObjects/Rail";
+import {Game} from "../Game";
 
 const g = 9.81 // gravity
 const R = BALL_SIZE/PHYSICS_SCALE
@@ -31,8 +32,9 @@ export class Physics {
   history: {balls: Ball[][], index: number[], time: number[], event: (PoolEvent | undefined)[]} = {balls: [], event: [], index: [], time: []}
   frames = 0
   n = -1
+  game: Game
 
-  constructor(balls: Ball[], frames: number) {
+  constructor(balls: Ball[], frames: number, game: Game) {
     this.balls = balls
     this.frames = frames
     this.ballsFuture.push(this.balls.map((b) => b.clone()))
@@ -44,6 +46,7 @@ export class Physics {
         }
       })
     }
+    this.game = game
   }
 
   isCalculating(): boolean{
@@ -117,7 +120,17 @@ export class Physics {
       this.resolve(event)
       this.timestamp(event.tau, event)
     }
-    console.log(JSON.parse(JSON.stringify(this.history)))
+    //console.log(JSON.parse(JSON.stringify(this.history)))
+    let i = -1
+    while (true){
+      i++
+      if(this.history.event[i]?.type == EventType.BallBall){
+        const id = this.history.event[i]?.agentsIds.filter(b => b != 0)[0]
+        this.game.handleFirstHit(this.balls.filter(b => b.id == id)[0])
+        break
+      }
+    }
+
     if(!DEBUG)
       this.generatePositions(1/ UPS)
     this.ballsFuture = this.history.balls
@@ -143,7 +156,7 @@ export class Physics {
     if(RAIL_COLLISION){
       let ev = this.getMinBallRailEvent()
       if(ev.tau < eventMin.tau){
-        console.log(ev, this.balls[ev.agentsIds[0]].clone(), this.rails[ev.agentsIds[1]])
+        //console.log(ev, this.balls[ev.agentsIds[0]].clone(), this.rails[ev.agentsIds[1]])
         eventMin = ev
       }
 
@@ -244,7 +257,7 @@ export class Physics {
       let ball = this.balls[event.agentsIds[0]]
       let rail = this.rails[event.agentsIds[1]]
 
-      Physics.applyBallRailCollision(ball, rail)
+      this.applyBallRailCollision(ball, rail)
     }
 
   }
@@ -255,9 +268,9 @@ export class Physics {
     this.balls[0].spin = {x: 0, y: 0, z: 0} // MAth.Pi*4 // TODO do something with it
     this.balls[0].state = BallState.sliding// MAth.Pi*4
     this.history = {balls: [], event: [], index: [], time: []}
-    console.log("start")
+    //console.log("start")
     this.simulateEvents()
-    console.log(JSON.parse(JSON.stringify(this.history)))
+    //console.log(JSON.parse(JSON.stringify(this.history)))
   }
 
   private static getCollisionTime(ball1: Ball, ball2: Ball): number {
@@ -316,7 +329,7 @@ export class Physics {
     if(ball1.id == 0 && ball2.id == 5){
       //console.log(result.length > 0 ? Math.min(...result) : Infinity, lg, a1, a2,b1,b2,c1,c2,result,  A, B, C)
       //console.log(a,b,c,d,e)
-      console.log(lg, result, [ball1.id, ball2.id])
+      //console.log(lg, result, [ball1.id, ball2.id])
     }
     return result.length > 0 ? Math.min(...result) : Infinity
   }
@@ -496,7 +509,21 @@ export class Physics {
     ball2.state = BallState.sliding
   }
 
-  private static applyBallRailCollision(ball:Ball, rail: Rail){
+  private applyBallRailCollision(ball:Ball, rail: Rail){
+    let y = ball.position.y
+    let x = ball.position.x
+    if(y > 2 || y < -2){
+      if(x > 4.15 + R || (x > -.5+R && x < .5-R) || (x < -4.15-R)){
+        ball.visible = false
+        this.game.handleHole(ball.clone())
+        ball.velocity = V3(0,0,0)
+        ball.spin = V3(0,0,0)
+        ball.position = V3(1000, 1000, 1000)
+        ball.state = BallState.stationary
+      }
+    }
+
+
     let phi = V2Angle(RV2(rail))
 
     let vel_R = V3RotateOn2D(ball.velocity, -phi)

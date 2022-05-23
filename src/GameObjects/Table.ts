@@ -3,13 +3,17 @@ import {Vector3, V3ToArrayWebgl} from "../helpers/Vector3";
 import {Transform} from "./Transform";
 import {FOV, TABLE_DEPTH} from "../helpers/Constants";
 import {GameObject} from "./GameObject";
+import {pointsOnCircle} from "../helpers/helpers";
 
 export class Table extends GameObject{
   readonly position: Vector3 = {x: TABLE_DEPTH, y: 0, z: 0}
+  showSetup: boolean = true
+  lengths: number[]
 
   constructor(gl: WebGL2RenderingContext, programInfo: any) {
     super(gl, programInfo);
     this.buffers = this.initBuffers();
+    this.lengths = [Table.getIndices(0).length, Table.getIndices(1).length, Table.getIndices(2).length, Table.getIndices(3).length]
   }
 
   initBuffers() {
@@ -31,7 +35,8 @@ export class Table extends GameObject{
         gr, gr, // TOP
         bl, bl, bl, bl, bl, bl,],
         [gr, gr, gr],
-        [gr, gr, gr]
+        [gr, gr, gr],
+        [...Array(11).keys()].map(() => gr)
       ];
       let colors: number[] = [];
 
@@ -58,18 +63,22 @@ export class Table extends GameObject{
       }
     }
 
-    return [getBuffers(0), getBuffers(1), getBuffers(2)];
+    return [getBuffers(0), getBuffers(1), getBuffers(2), getBuffers(3)];
   }
 
   draw(cameraTransform: Transform) {
     const gl = this.gl
     const buffersArr = this.buffers
     const programInfo = this.programInfo
+    const lengths = this.lengths
 
     const fieldOfView = FOV * Math.PI / 180;
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const zNear = 0.1;
     const zFar = 100.0;
+
+    const br = [0.41, 0.22, 0.17, 1]
+    const bl = [0, 0, 0, 1]
 
     const projectionMatrix = mat4.create();
 
@@ -99,11 +108,13 @@ export class Table extends GameObject{
       modelViewMatrix,
       V3ToArrayWebgl(cameraTransform.position))
 
-    gl.uniform4fv(programInfo.uniformLocations.accentColor, [0.41, 0.22, 0.17, 1])
+
 
     drawPart(0)
     drawPart(1)
     drawPart(2)
+    if(this.showSetup)
+      drawPart(3)
 
     function drawPart(i: number) {
       const buffers = buffersArr[i]
@@ -157,11 +168,12 @@ export class Table extends GameObject{
         programInfo.uniformLocations.modelViewMatrix,
         false,
         modelViewMatrix);
-      gl.uniform1i(programInfo.uniformLocations.modelTextureType, [0, 1, 2][i]);
+      gl.uniform4fv(programInfo.uniformLocations.accentColor, [br, br, br, bl][i])
+      gl.uniform1i(programInfo.uniformLocations.modelTextureType, [0, 1, 2, 1][i]);
 
       {
         const offset = 0;
-        const vertexCount = Table.getIndices(i).length;
+        const vertexCount = lengths[i]
         const type = gl.UNSIGNED_SHORT;
         gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
       }
@@ -186,6 +198,16 @@ export class Table extends GameObject{
       -1.65, -2.0, -4.15,
       -1.65, -2.0, 4.15,
     ]
+    const area = [...Array(11).keys()].map((i) =>{
+      let points =  pointsOnCircle(1, (360/20)*i)
+      return [points[1]*.6, points[2] + 0.01, points[0]*.6 + 2.8]
+    })
+    const area2 = [...Array(11).keys()].map((i) =>{
+      let points =  pointsOnCircle(1, (360/20)*i)
+      return [points[1], points[2] + 0.01, points[0]]
+    })
+
+    console.log(area[10], area2[10])
     return [[
       // TOP
       1.65, 0.0, 5.0,
@@ -227,7 +249,7 @@ export class Table extends GameObject{
       -2.74, 0.0, 4.61,
       -2.5, 0.0, 4.15,
 
-    ], bottom, bottom
+    ], bottom, bottom, [0.0, 0.001, 2.8, ...area.flat()]
     ][i]
   }
 
@@ -267,6 +289,8 @@ export class Table extends GameObject{
       2, 3, 9,
       4, 5, 10,
       6, 7, 11
-    ]][i]
+    ],[
+      ...Array(11).keys()].map((i) => [0, i, i + 1]).flat()
+    ][i]
   }
 }
