@@ -118,8 +118,8 @@ export type BallPosVelSpin = {
 
 export enum PlayerColors {
     Undefined,
-    PlayerClear,
-    PlayerDotted,
+    PlayerColor,
+    PlayerGrid,
 }
 
 export enum BallColor {
@@ -132,5 +132,6 @@ export enum BallColor {
 export enum GameStage {
     BallPlacement,
     Playing,
-    Ended
+    Ended,
+    BallRePlacement
 }

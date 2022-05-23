@@ -110,6 +110,7 @@ export class Physics {
   }
 
   simulateEvents(){
+    this.n = -1
     let event = new PoolEvent(EventType.None, [], 0)
     this.timestamp(0)
 
@@ -124,6 +125,8 @@ export class Physics {
     let i = -1
     while (true){
       i++
+      if(i >= this.history.event.length)
+        break
       if(this.history.event[i]?.type == EventType.BallBall){
         const id = this.history.event[i]?.agentsIds.filter(b => b != 0)[0]
         this.game.handleFirstHit(this.balls.filter(b => b.id == id)[0])

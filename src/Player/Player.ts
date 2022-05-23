@@ -2,7 +2,7 @@ import {IPlayer} from "./IPlayer";
 import {Transform} from "../GameObjects/Transform";
 import {IInputMethod} from "./IInputMethod";
 import {clamp, GameStage} from "../helpers/helpers";
-import {V3, V3ClampLength, V3RotateOn2D, Vector3} from "../helpers/Vector3";
+import {V3ClampLength, V3RotateOn2D, Vector3} from "../helpers/Vector3";
 import {STRENGTH_MAX, STRENGTH_MIN} from "../helpers/Constants";
 
 const STRENGTH_DIFF = STRENGTH_MAX - STRENGTH_MIN;
@@ -13,7 +13,6 @@ export class Player extends IPlayer{
   posSensitivity = .5
   strengthSensitivity: number = 1.6
   strength: number = STRENGTH_MIN + STRENGTH_DIFF/2
-  ballPos: Vector3 = V3(0,0,0)
   lastStage: GameStage = GameStage.BallPlacement
 
   constructor(inputMethod: IInputMethod) {
@@ -31,7 +30,8 @@ export class Player extends IPlayer{
     this.cameraTransformInv.rotation.x += (-this.sensitivity * dt * this.inputMethod.getDown())
     this.cameraTransformInv.rotation.x = clamp(this.cameraTransformInv.rotation.x, Math.PI/ 12, Math.PI/4)
 
-    if(stage == GameStage.BallPlacement){
+    console.log(this.on, stage)
+    if(stage == GameStage.BallPlacement || stage == GameStage.BallRePlacement){
       this.ballPos.x += (this.posSensitivity * dt * this.inputMethod.getUpModified())
       this.ballPos.x += (-this.posSensitivity * dt * this.inputMethod.getDownModified())
       this.ballPos.y += (this.posSensitivity * dt * this.inputMethod.getRightModified())
@@ -63,7 +63,10 @@ export class Player extends IPlayer{
   }
 
   hitHandler(){
-    if(this.lastStage == GameStage.BallPlacement)
+    if(!this.on)
+      return
+
+    if(this.lastStage == GameStage.BallPlacement || this.lastStage == GameStage.BallRePlacement)
       this.placeCallback(this.ballPos)
     if(this.lastStage == GameStage.Playing){
       this.hitCallback({

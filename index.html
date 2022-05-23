@@ -62,7 +62,26 @@
 <body>
 <div id="app">
   <noscript>Enable JS</noscript>
-  <div id="controls"></div>
+  <div id="controls">
+    <div id="selects">
+      <div class="sel">
+        <h3>Player 1</h3>
+        <select id="player1">
+          <option value="human" selected>Human</option>
+          <option value="ai">AI</option>
+        </select>
+      </div>
+      <div class="sel">
+        <h3>Player 2</h3>
+        <select id="player2">
+          <option value="human" selected>Human</option>
+          <option value="ai">AI</option>
+        </select>
+      </div>
+
+    </div>
+    <button id="play">PLAY</button>
+  </div>
   <div id="canvasDiv">
     <canvas id="gameCanvas" width="0" height="0"></canvas>
     <canvas id="textCanvas" width="0" height="0"></canvas>

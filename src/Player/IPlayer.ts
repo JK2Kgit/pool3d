@@ -1,9 +1,11 @@
 import {Transform} from "../GameObjects/Transform";
-import {V3TimeScalar, Vector3} from "../helpers/Vector3";
+import {V3, V3TimeScalar, Vector3} from "../helpers/Vector3";
 import {Hit} from "../helpers/Hit";
 import {GameStage} from "../helpers/helpers";
 
 export abstract class IPlayer{
+  on: boolean = false
+  ballPos: Vector3 = V3(0,0,0)
   cameraTransformInv: Transform = new Transform({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: Math.PI/ 5.7}) // roattion ok , position inverted
   hitCallback: (hit: Hit) => void = (_hit: Hit) => {}
   placeCallback: (pos: Vector3) => void = (_pos: Vector3) => {}

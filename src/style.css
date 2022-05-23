@@ -22,3 +22,13 @@ body{
   left: 100px;
 
 }
+
+#selects{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.sel{
+  margin: 10px;
+}
