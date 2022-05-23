@@ -5,9 +5,9 @@ import {BALL_SIZE, PHYSICS_SCALE, TABLE_DEPTH, TABLE_WIDTH, TOL, UPS} from "../h
 import {BallState} from "../helpers/helpers";
 import {EventType, PoolEvent} from "./Event";
 import {V2, V2Angle} from "../helpers/Vector2";
-import {allRoots} from "flo-poly";
 import {Rail, RAIL_ID, RV2} from "../GameObjects/Rail";
 import {Game} from "../Game";
+import {allRoots} from "../helpers/Polynomial";
 
 const g = 9.81 // gravity
 const R = BALL_SIZE/PHYSICS_SCALE
@@ -279,7 +279,7 @@ export class Physics {
   private static getCollisionTime(ball1: Ball, ball2: Ball): number {
     let c1 = ball1.position
     let c2 = ball2.position
-    let lg = [JSON.parse(JSON.stringify( ball1)), JSON.parse(JSON.stringify( ball2))]
+    //let lg = [JSON.parse(JSON.stringify( ball1)), JSON.parse(JSON.stringify( ball2))]
 
     let a1 = V2(0, 0)
     let b1 = V2(0, 0)
