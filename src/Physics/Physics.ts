@@ -32,6 +32,7 @@ export class Physics {
   time: number = 0
   ballsFuture: Ball[][] = []
   history: {balls: Ball[][], index: number[], time: number[], event: (PoolEvent | undefined)[]} = {balls: [], event: [], index: [], time: []}
+  sounds: Map<number, string> = new Map()
   frames = 0
   n = -1
   game: Game
@@ -60,6 +61,8 @@ export class Physics {
       console.log(this.ballsFuture[0][0].state)
       return this.ballsFuture[0]
     }
+    if(this.sounds.has(this.n - this.ballsFuture.length))
+      this.game.playSound(this.sounds.get(this.n - this.ballsFuture.length)!)
     if(this.ballsFuture.length < 2){
       this.balls = this.ballsFuture[0]
       return this.ballsFuture[0]
@@ -102,9 +105,12 @@ export class Physics {
         this.balls = oldHistory.balls[oldHistory.index[i - 1]].map((b) => b.clone())
         this.evolve(eventTime + dtPrime)
         this.timestamp(eventTime + dtPrime, event)
+
         eventTime += dtPrime
         dtPrime = dt
       }
+      if(event.sound != undefined)
+        this.sounds.set(this.n, event.sound)
 
       dtPrime = dt - (event.tau - eventTime)
       this.balls = oldHistory.balls[oldHistory.index[i]]
@@ -223,7 +229,7 @@ export class Physics {
       })
     })
 
-    return new PoolEvent(EventType.BallBall, agentIds, tauMin)
+    return new PoolEvent(EventType.BallBall, agentIds, tauMin, "collision.mp3")
   }
 
   getMinBallRailEvent(): PoolEvent{
@@ -262,7 +268,10 @@ export class Physics {
       let ball = this.balls[event.agentsIds[0]]
       let rail = this.rails[event.agentsIds[1]]
 
-      this.applyBallRailCollision(ball, rail)
+      if(this.applyBallRailCollision(ball, rail))
+        event.sound = "hole.mp3"
+      else
+        event.sound = "rail.mp3"
     }
 
   }
@@ -530,7 +539,7 @@ export class Physics {
     ball2.state = BallState.sliding
   }
 
-  private applyBallRailCollision(ball:Ball, rail: Rail){
+  private applyBallRailCollision(ball:Ball, rail: Rail): boolean{
     let y = ball.position.y
     let x = ball.position.x
     if(y > 2 || y < -2){
@@ -541,6 +550,7 @@ export class Physics {
         ball.spin = V3(0,0,0)
         ball.position = V3(1000, 1000, 1000)
         ball.state = BallState.stationary
+        return true
       }
     }
 
@@ -550,5 +560,6 @@ export class Physics {
     let vel_R = V3RotateOn2D(ball.velocity, -phi)
     vel_R.x*=-1
     ball.velocity = V3RotateOn2D(vel_R, phi)
+    return false
   }
 }

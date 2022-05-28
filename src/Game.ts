@@ -319,6 +319,14 @@ export class Game {
     console.log("GAME OVER", this)
   }
 
+  playSound(name: string){
+    const audio = new Audio('UIAssets/' + name);
+    audio.loop = false;
+    audio.play()
+      .then(() => {console.log("PLAYING")})
+      .catch(() => audio.play());
+  }
+
   private calculateCameraPosition() {
     let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
     this.cameraTransform.position = V3TimeScalar(this.centerPosition, -1)
@@ -373,6 +381,7 @@ export class Game {
 
   private handleHit(hit: Hit) {
     this.canSwitchColor = false
+    this.playSound("strike.mp3")
     this.physics.hit(hit)
   }
 
