@@ -84,6 +84,7 @@ export class Player extends IPlayer{
     if(this.lastStage == GameStage.Playing){
       this.hitCallback({
         direction: V3RotateOn2D({x: 1, y: 0, z: 0}, this.cameraTransformInv.rotation.y),
+        angleRad: this.cameraTransformInv.rotation.x,
         positionOnBall: this.hitPlace,
         strength: this.strength
       })

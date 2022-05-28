@@ -14,6 +14,8 @@ const R = BALL_SIZE/PHYSICS_SCALE
 const u_s = 0.2 // 0.2 sliding friction
 const u_r = 0.01 // 0.01 rolling friction
 const u_sp = 10 * 2/5*R/9 // spinning friction
+const M = 0.567
+const m = 0.170097
 
 const DEBUG = false
 const COLLISION = true
@@ -267,8 +269,24 @@ export class Physics {
 
   hit(hit: Hit){
     if(this.isCalculating()) return;
-    this.balls[0].velocity = V3TimeScalar(hit.direction, hit.strength)
-    this.balls[0].spin = {x: 0, y: 0, z: 0} // MAth.Pi*4 // TODO do something with it
+    console.log(hit)
+    const a = -hit.positionOnBall.x*R
+    const b = hit.positionOnBall.y*R
+
+    const phi = V2Angle(hit.direction) + Math.PI / 2
+    const I = 2/5 * m * R**2
+    const c = Math.sqrt(R**2 - a**2 - b**2)
+    const numerator = 2 * M * hit.strength
+    const temp = a**2 + (b*Math.cos(hit.angleRad))**2 + (c*Math.cos(hit.angleRad))**2 - 2*b*c*Math.cos(hit.angleRad)*Math.sin(hit.angleRad)
+
+    const denominator = 1 + m/M + 5/2/R**2 * temp
+    const F = numerator/denominator
+
+    const velRel = V3(0, Math.cos(hit.angleRad)* (-F/m), 0)
+    const spinRel = V3TimeScalar(V3(-c*Math.sin(hit.angleRad) + b*Math.cos(hit.angleRad), a*Math.sin(hit.angleRad), -a*Math.cos(hit.angleRad)), F/I)
+
+    this.balls[0].velocity = V3RotateOn2D(velRel, phi)
+    this.balls[0].spin = V3RotateOn2D(spinRel, phi)
     this.balls[0].state = BallState.sliding// MAth.Pi*4
     this.history = {balls: [], event: [], index: [], time: []}
     //console.log("start")
