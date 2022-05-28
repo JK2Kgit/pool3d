@@ -54,4 +54,12 @@ export class KeyboardInput implements IInputMethod{
     })
   }
 
+  setSwitchHandler(fn: () => void): void {
+    document.addEventListener('keypress', (e: KeyboardEvent) =>{
+      if(e.key == 's'){
+        fn()
+      }
+    })
+  }
+
 }

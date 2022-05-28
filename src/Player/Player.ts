@@ -71,6 +71,9 @@ export class Player extends IPlayer{
 
   registerHandlers(){
     this.inputMethod.setHitHandler(() => this.hitHandler())
+    this.inputMethod.setSwitchHandler(() => {
+      this.switchCallback()
+    })
   }
 
   hitHandler(){

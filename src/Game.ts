@@ -86,6 +86,7 @@ export class Game {
       p.setTransform(this.cameraTransform)
       p.hitCallback = (hit: Hit) => this.handleHit(hit)
       p.placeCallback = (pos: Vector3) => this.handlePlace(pos)
+      p.switchCallback = () => this.switchColor()
       p.referenceGame(this)
     })
     this.skyBox.draw(this.cameraTransform.rotation.x)
@@ -361,6 +362,7 @@ export class Game {
     this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
     this.players[this.currentPlayer].on = true
     this.text1 = this.currentPlayer == 0 ? "PLAYER ONE": "PLAYER TWO"
+    this.canSwitchColor = false
 
     if(this.players[this.currentPlayer].isAi()){
       console.log("NOW AI")
@@ -460,4 +462,11 @@ export class Game {
     this.balls[0].position = V3Add(WHITE_BALL_POS, pos)
     this.textBlack = undefined
   }
+
+  private switchColor(){
+    if(this.canSwitchColor)
+      this.player1Color = this.player2Color
+  }
+
+
 }

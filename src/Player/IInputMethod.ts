@@ -10,4 +10,5 @@ export interface IInputMethod{
   getDownModified(): number // strength down
 
   setHitHandler(fn: () => void): void
+  setSwitchHandler(fn: () => void): void
 }

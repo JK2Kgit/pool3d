@@ -12,6 +12,7 @@ export abstract class IPlayer{
   game: Game | undefined
   hitCallback: (hit: Hit) => void = (_hit: Hit) => {}
   placeCallback: (pos: Vector3) => void = (_pos: Vector3) => {}
+  switchCallback: () => void = () => {}
   public setTransform(t: Transform): void{
     this.cameraTransformInv = new Transform(V3TimeScalar(t.position, -1), t.rotation)
   }
