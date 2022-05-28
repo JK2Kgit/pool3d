@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <link rel="" href="">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Vite App</title>
   <script defer type="module" src="/src/main.ts"></script>
@@ -57,6 +58,12 @@
     }
 
   </script>
+  <style>
+      @font-face {
+          font-family: c64Font;
+          src: url(UIAssets/C64_Pro_Mono-STYLE.woff2);
+      }
+  </style>
 
 </head>
 <body>
@@ -74,8 +81,8 @@
       <div class="sel">
         <h3>Player 2</h3>
         <select id="player2">
-          <option value="human" selected>Human</option>
-          <option value="ai">AI</option>
+          <option value="human">Human</option>
+          <option value="ai" selected>AI</option>
         </select>
       </div>
 

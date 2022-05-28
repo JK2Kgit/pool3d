@@ -12,7 +12,7 @@ import {allRoots} from "../helpers/Polynomial";
 const g = 9.81 // gravity
 const R = BALL_SIZE/PHYSICS_SCALE
 const u_s = 0.2 // 0.2 sliding friction
-const u_r = 0.01 // 0.01 rolling friction
+const u_r = 0.1 // 0.01 rolling friction
 const u_sp = 10 * 2/5*R/9 // spinning friction
 const M = 0.567
 const m = 0.170097

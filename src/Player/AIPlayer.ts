@@ -12,4 +12,8 @@ export class AIPlayer extends IPlayer{
   getStrength(): number {
     return .5;
   }
+
+  isAi(): boolean {
+    return true;
+  }
 }

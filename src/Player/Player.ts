@@ -94,4 +94,8 @@ export class Player extends IPlayer{
   getStrength(): number {
     return (this.strength - STRENGTH_MIN)/STRENGTH_DIFF;
   }
+
+  isAi(): boolean {
+    return false;
+  }
 }

@@ -34,6 +34,9 @@ export class Game {
   change: boolean = true
   showStrength: boolean = false
   showCenter: boolean = false
+  text1: string | undefined = undefined
+  text2: string | undefined = undefined
+  textBlack: string | undefined = undefined
   images: HTMLImageElement[];
   flicker: number = 0
   stage: GameStage = GameStage.BallPlacement
@@ -80,8 +83,18 @@ export class Game {
       p.setTransform(this.cameraTransform)
       p.hitCallback = (hit: Hit) => this.handleHit(hit)
       p.placeCallback = (pos: Vector3) => this.handlePlace(pos)
+      p.referenceGame(this)
     })
     this.skyBox.draw(this.cameraTransform.rotation.x)
+    this.text1 = "PLAYER ONE"
+    if(this.players[this.currentPlayer].isAi()){
+      this.text2 = "THINKING..."
+      this.showCenter = false
+      this.showStrength = false
+    }
+    else {
+      this.textBlack = "PLACE THE BALL"
+    }
     window.requestAnimationFrame(() => this.frame());
     //setInterval(() => {this.physics.physicsLoop()}, 10)
   }
@@ -116,9 +129,30 @@ export class Game {
     this.flicker += 1
     const mult = WIDTH / 562
     const half = WIDTH / 2
-    this.textContext.fillStyle = '#588d43';
-    this.textContext.fillRect(half - 12.5 * mult, 0, 25 * mult, 23 * mult)
-    this.textContext.drawImage(this.images[0], half - 12.5 * mult, 0)
+
+    if(this.text1 != undefined){
+      this.textContext.fillStyle = '#ffffff';
+      this.textContext.fillRect(100*mult, 0, 124 * mult, 12 * mult)
+      this.textContext.font = 12*mult + 'px c64Font';
+      this.textContext.fillStyle = 'black';
+      this.textContext.fillText(this.text1, 102*mult,  12*mult);
+    }
+
+    if(this.text2 != undefined){
+      this.textContext.fillStyle = '#ffffff';
+      this.textContext.fillRect(280*mult, 0, 134 * mult, 12 * mult)
+      this.textContext.font = 12*mult + 'px c64Font';
+      this.textContext.fillStyle = 'black';
+      this.textContext.fillText(this.text2, 282*mult,  12*mult);
+    }
+
+    if(this.textBlack != undefined){
+      this.textContext.fillStyle = '#000000';
+      this.textContext.fillRect(280*mult, 0, 172 * mult, 12 * mult)
+      this.textContext.font = 12*mult + 'px c64Font';
+      this.textContext.fillStyle = 'white';
+      this.textContext.fillText(this.textBlack, 282*mult,  12*mult);
+    }
 
     if (this.showStrength) {
       const strength = this.players[this.currentPlayer].getStrength()
@@ -146,6 +180,9 @@ export class Game {
     }
 
     if (this.showCenter){
+      this.textContext.fillStyle = '#588d43';
+      this.textContext.fillRect(half - 12.5 * mult, 0, 25 * mult, 23 * mult)
+      this.textContext.drawImage(this.images[0], half - 12.5 * mult, 0)
       const centerY = (1 - this.ballHitPosition.y)*mult*11.5
       const centerX = half + this.ballHitPosition.x*mult*10
       this.textContext.fillStyle = '#000000';
@@ -166,8 +203,9 @@ export class Game {
 
     let coords = COORDS[this.player1Color == PlayerColors.Undefined ? 0 : 1][this.currentPlayer]
     this.textContext.fillStyle = '#588d43';
-    this.textContext.fillRect(coords.x, coords.y, 25 * mult, 23 * mult)
-    if (this.flicker > FLICKER / 2)
+    if(!this.physics.isCalculating())
+      this.textContext.fillRect(coords.x, coords.y, 25 * mult, 23 * mult)
+    if (this.flicker > FLICKER / 2 && !this.physics.isCalculating())
       this.textContext.drawImage(this.images[0], coords.x, coords.y)
 
 
@@ -307,12 +345,22 @@ export class Game {
       this.centerPosition = this.balls[0].position
       this.showStrength = false
       this.showCenter = false
+      this.textBlack = "PLACE THE BALL"
     }
     this.players[this.currentPlayer].on = false
     this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
     this.players[this.currentPlayer].on = true
+    this.text1 = this.currentPlayer == 0 ? "PLAYER ONE": "PLAYER TWO"
 
-    console.log(this.balls[0], this.currentPlayer)
+    if(this.players[this.currentPlayer].isAi()){
+      this.text2 = "THINKING..."
+      this.showCenter = false
+      this.showStrength = false
+    }
+    else {
+      this.showCenter = true
+      this.showStrength = true
+    }
   }
 
   gameOver() {
@@ -383,6 +431,7 @@ export class Game {
     this.canSwitchColor = false
     this.playSound("strike.mp3")
     this.physics.hit(hit)
+    this.text2 = undefined
   }
 
   private handlePlace(pos: Vector3) {
@@ -392,5 +441,6 @@ export class Game {
     this.table.showSetup = false
     this.balls[0].moving = false
     this.balls[0].position = V3Add(WHITE_BALL_POS, pos)
+    this.textBlack = undefined
   }
 }
