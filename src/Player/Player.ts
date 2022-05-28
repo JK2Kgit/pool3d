@@ -3,12 +3,10 @@ import {Transform} from "../GameObjects/Transform";
 import {IInputMethod} from "./IInputMethod";
 import {clamp, GameStage} from "../helpers/helpers";
 import {V3ClampLength, V3RotateOn2D, Vector3} from "../helpers/Vector3";
-import {STRENGTH_MAX, STRENGTH_MIN, STRIKE} from "../helpers/Constants";
+import {CAMERA_MAX, CAMERA_MIN, STRENGTH_MAX, STRENGTH_MIN, STRIKE} from "../helpers/Constants";
 import {V2, Vector2} from "../helpers/Vector2";
 
 const STRENGTH_DIFF = STRENGTH_MAX - STRENGTH_MIN;
-const CAMERA_MIN = Math.PI/ 12
-const CAMERA_MAX = Math.PI/4
 const CAMERA_DIFF = CAMERA_MAX - CAMERA_MIN
 const STRIKE_DIFF = STRIKE.TOP - STRIKE.BOTTOM
 

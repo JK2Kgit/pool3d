@@ -27,7 +27,7 @@ export class Game {
   balls: Ball[] = []
   centerPosition: Vector3
   programInfo: any
-  cameraTransform: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI / 5.7, y: 0, z: 0})
+  cameraTransform: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI / 7, y: 0, z: 0})
   ballHitPosition: Vector2 = V2(0,0)
   physics: Physics
   wasCalculating: boolean = false
@@ -42,6 +42,7 @@ export class Game {
   stage: GameStage = GameStage.BallPlacement
   ballInHoles: Ball[] = []
   firstHit: Ball | undefined = undefined
+  audio :  HTMLAudioElement
 
   player1Color: PlayerColors = PlayerColors.Undefined
   canSwitchColor: boolean = false
@@ -74,6 +75,8 @@ export class Game {
     this.images[0].src = "UIAssets/white.png"
     this.images[1].src = "UIAssets/clear.png"
     this.images[2].src = "UIAssets/dotted.png"
+    this.audio = new Audio();
+    this.audio.loop = false;
   }
 
   start() {
@@ -114,7 +117,8 @@ export class Game {
     this.drawUi(this.currentPlayer, null)
     this.drawFps(fps)
 
-    window.requestAnimationFrame(() => this.frame());
+    if(this.stage != GameStage.Ended)
+      window.requestAnimationFrame(() => this.frame());
   }
 
   drawFps(fps: number) {
@@ -312,7 +316,13 @@ export class Game {
         }
 
       }
+    }
 
+    if(this.firstHit?.type == BallColor.black){
+      const color = this.currentPlayer == 0 ? this.player1Color : this.player2Color
+      const balls = this.balls.filter((b) => b.type as number == color as number && b.position.z == 0)
+      if(balls.length != 0)
+        faul = true
     }
 
     if (holeBlack)
@@ -353,26 +363,33 @@ export class Game {
     this.text1 = this.currentPlayer == 0 ? "PLAYER ONE": "PLAYER TWO"
 
     if(this.players[this.currentPlayer].isAi()){
+      console.log("NOW AI")
       this.text2 = "THINKING..."
       this.showCenter = false
       this.showStrength = false
     }
     else {
-      this.showCenter = true
-      this.showStrength = true
+      this.text2 = undefined
+      this.showCenter = !faul
+      this.showStrength = !faul
     }
   }
 
   gameOver() {
+    this.stage = GameStage.Ended
+    this.canvas.style.display = 'none'
     console.log("GAME OVER", this)
   }
 
   playSound(name: string){
-    const audio = new Audio('UIAssets/' + name);
-    audio.loop = false;
-    audio.play()
-      .then(() => {console.log("PLAYING")})
-      .catch(() => audio.play());
+    this.audio.src = 'UIAssets/' + name
+    this.audio.load()
+    setTimeout(() => {
+      this.audio.play()
+        .then(() => {})
+        .catch(() => this.audio.play());
+    }, 50)
+
   }
 
   private calculateCameraPosition() {
@@ -436,8 +453,8 @@ export class Game {
 
   private handlePlace(pos: Vector3) {
     this.stage = GameStage.Playing
-    this.showStrength = true
-    this.showCenter = true
+    this.showStrength = !this.players[this.currentPlayer].isAi()
+    this.showCenter = !this.players[this.currentPlayer].isAi()
     this.table.showSetup = false
     this.balls[0].moving = false
     this.balls[0].position = V3Add(WHITE_BALL_POS, pos)

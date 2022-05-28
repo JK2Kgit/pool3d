@@ -18,9 +18,11 @@ export const FLICKER = UPS
 export const TOL = 1e-8
 export const PHYSICS_SCALE = 1
 export const STRENGTH_MIN = 1
-export const STRENGTH_MAX = 11
+export const STRENGTH_MAX = 9
 export const STRIKE = {
   TOP: .145,
   SIDE: .729,
   BOTTOM: -.666, // actual value 16/24 -> 2/3
 }
+export const CAMERA_MIN = Math.PI/ 12
+export const CAMERA_MAX = Math.PI/4

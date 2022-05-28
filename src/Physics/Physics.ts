@@ -278,17 +278,18 @@ export class Physics {
 
   hit(hit: Hit){
     if(this.isCalculating()) return;
+
     console.log(hit)
     const a = -hit.positionOnBall.x*R
-    const b = hit.positionOnBall.y*R
+    const b = (hit.positionOnBall.y + 0.25)*R
 
     const phi = V2Angle(hit.direction) + Math.PI / 2
-    const I = 2/5 * m * R**2
+    const I = (2/5) * m * R**2 * 2
     const c = Math.sqrt(R**2 - a**2 - b**2)
     const numerator = 2 * M * hit.strength
     const temp = a**2 + (b*Math.cos(hit.angleRad))**2 + (c*Math.cos(hit.angleRad))**2 - 2*b*c*Math.cos(hit.angleRad)*Math.sin(hit.angleRad)
 
-    const denominator = 1 + m/M + 5/2/R**2 * temp
+    const denominator = 1 + (m/M) + 5/2/R**2 * temp
     const F = numerator/denominator
 
     const velRel = V3(0, Math.cos(hit.angleRad)* (-F/m), 0)
@@ -298,6 +299,7 @@ export class Physics {
     this.balls[0].spin = V3RotateOn2D(spinRel, phi)
     this.balls[0].state = BallState.sliding// MAth.Pi*4
     this.history = {balls: [], event: [], index: [], time: []}
+    console.log(this.balls[0].clone(), F, I)
     //console.log("start")
     this.simulateEvents()
     //console.log(JSON.parse(JSON.stringify(this.history)))
