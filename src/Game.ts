@@ -9,6 +9,7 @@ import {V3, V3Add, V3TimeScalar, Vector3} from "./helpers/Vector3";
 import {Hit} from "./helpers/Hit";
 import {Physics} from "./Physics/Physics";
 import {COORDS, FLICKER, PHYSICS_SCALE, SIZE_MULT, UPS, WHITE_BALL_POS, WIDTH} from "./helpers/Constants";
+import {V2, Vector2} from "./helpers/Vector2";
 
 
 export class Game {
@@ -27,10 +28,12 @@ export class Game {
   centerPosition: Vector3
   programInfo: any
   cameraTransform: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI / 5.7, y: 0, z: 0})
+  ballHitPosition: Vector2 = V2(0,0)
   physics: Physics
   wasCalculating: boolean = false
   change: boolean = true
   showStrength: boolean = false
+  showCenter: boolean = false
   images: HTMLImageElement[];
   flicker: number = 0
   stage: GameStage = GameStage.BallPlacement
@@ -114,8 +117,8 @@ export class Game {
     const mult = WIDTH / 562
     const half = WIDTH / 2
     this.textContext.fillStyle = '#588d43';
-    this.textContext.fillRect(half - 11 * mult, 0, 25 * mult, 23 * mult)
-    this.textContext.drawImage(this.images[0], half - 11 * mult, 0)
+    this.textContext.fillRect(half - 12.5 * mult, 0, 25 * mult, 23 * mult)
+    this.textContext.drawImage(this.images[0], half - 12.5 * mult, 0)
 
     if (this.showStrength) {
       const strength = this.players[this.currentPlayer].getStrength()
@@ -139,6 +142,15 @@ export class Game {
 
       this.textContext.fillStyle = '#000000';
       this.textContext.fillRect(half + (41 + strength * 112) * mult, 0, 3 * mult, 14 * mult)
+
+    }
+
+    if (this.showCenter){
+      const centerY = (1 - this.ballHitPosition.y)*mult*11.5
+      const centerX = half + this.ballHitPosition.x*mult*10
+      this.textContext.fillStyle = '#000000';
+      this.textContext.fillRect(centerX - 5.25*mult, centerY - mult, 10.5*mult, 2*mult)
+      this.textContext.fillRect(centerX - 1.75*mult, centerY - 2.5*mult, 3.5*mult, 5*mult)
 
     }
 
@@ -182,8 +194,9 @@ export class Game {
       let res = this.players[this.currentPlayer].handleInput(dt, this.stage)
       this.cameraTransform = res.T
       this.change = res.C
+      this.ballHitPosition = res.hitPlace
       if (this.stage == GameStage.BallPlacement || this.stage == GameStage.BallRePlacement) {
-        this.balls[0].position = V3Add(WHITE_BALL_POS, res.ball)
+        this.balls[0].position = V3Add(WHITE_BALL_POS, res.ballPos)
       }
     }
   }
@@ -293,6 +306,7 @@ export class Game {
       this.stage = GameStage.BallRePlacement
       this.centerPosition = this.balls[0].position
       this.showStrength = false
+      this.showCenter = false
     }
     this.players[this.currentPlayer].on = false
     this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
@@ -302,7 +316,7 @@ export class Game {
   }
 
   gameOver() {
-
+    console.log("GAME OVER", this)
   }
 
   private calculateCameraPosition() {
@@ -365,6 +379,7 @@ export class Game {
   private handlePlace(pos: Vector3) {
     this.stage = GameStage.Playing
     this.showStrength = true
+    this.showCenter = true
     this.table.showSetup = false
     this.balls[0].moving = false
     this.balls[0].position = V3Add(WHITE_BALL_POS, pos)

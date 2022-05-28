@@ -19,3 +19,8 @@ export const TOL = 1e-8
 export const PHYSICS_SCALE = 1
 export const STRENGTH_MIN = 1
 export const STRENGTH_MAX = 11
+export const STRIKE = {
+  TOP: .145,
+  SIDE: .729,
+  BOTTOM: -.666, // actual value 16/24 -> 2/3
+}

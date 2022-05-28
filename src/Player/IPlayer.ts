@@ -2,6 +2,7 @@ import {Transform} from "../GameObjects/Transform";
 import {V3, V3TimeScalar, Vector3} from "../helpers/Vector3";
 import {Hit} from "../helpers/Hit";
 import {GameStage} from "../helpers/helpers";
+import {Vector2} from "../helpers/Vector2";
 
 export abstract class IPlayer{
   on: boolean = false
@@ -12,7 +13,7 @@ export abstract class IPlayer{
   public setTransform(t: Transform): void{
     this.cameraTransformInv = new Transform(V3TimeScalar(t.position, -1), t.rotation)
   }
-  public abstract handleInput(dt:number, stage:GameStage): {T: Transform, C: boolean, ball: Vector3}
+  public abstract handleInput(dt:number, stage:GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2}
   public abstract getStrength(): number
 }
 
