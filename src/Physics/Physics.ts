@@ -92,13 +92,22 @@ export class Physics {
     this.balls = oldHistory.balls[0]
     this.timestamp(0)
     let dtPrime = dt
-    for (let i = 0; i < oldHistory.event.length; i++) {
+    for (let i = 0; i <= oldHistory.event.length; i++) {
+      console.log(i, "0")
       const event = oldHistory.event[oldHistory.index[i]]
       if(event == undefined)
         continue
 
-      if(event.tau == Infinity)
-        break;
+      console.log(i, "1", event)
+
+      if(event.tau == Infinity){
+        this.balls = oldHistory.balls[oldHistory.index[i]]
+
+        this.timestamp(dtPrime, event)
+        break
+      }
+
+      console.log(i, "2")
 
       let eventTime = 0
       while (eventTime < (event.tau - dtPrime)){
@@ -129,7 +138,7 @@ export class Physics {
       this.resolve(event)
       this.timestamp(event.tau, event)
     }
-    //console.log(JSON.parse(JSON.stringify(this.history)))
+    console.log(JSON.parse(JSON.stringify(this.history)))
     let i = -1
     while (true){
       i++
@@ -299,7 +308,6 @@ export class Physics {
     this.balls[0].spin = V3RotateOn2D(spinRel, phi)
     this.balls[0].state = BallState.sliding// MAth.Pi*4
     this.history = {balls: [], event: [], index: [], time: []}
-    console.log(this.balls[0].clone(), F, I)
     //console.log("start")
     this.simulateEvents()
     //console.log(JSON.parse(JSON.stringify(this.history)))

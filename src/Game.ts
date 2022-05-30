@@ -260,6 +260,7 @@ export class Game {
   }
 
   handleMoveEnd() {
+    console.log(JSON.parse(JSON.stringify(this.ballInHoles)), this.firstHit?.clone())
     const holeWhite = this.ballInHoles.some((b) => b.type == BallColor.White)
     const holeBlack = this.ballInHoles.some((b) => b.type == BallColor.black)
     const holeDotted = this.ballInHoles.some((b) => b.type == BallColor.grid)
@@ -268,6 +269,10 @@ export class Game {
     let end = false
 
     if (this.player1Color == PlayerColors.Undefined) {
+      if (this.firstHit == undefined) {
+        faul = true
+      }
+
       if (!holeClear && !holeDotted) { //none
         end = true
       }
@@ -379,7 +384,7 @@ export class Game {
 
   gameOver() {
     this.stage = GameStage.Ended
-    this.canvas.style.display = 'none'
+    //this.canvas.style.display = 'none'
     console.log("GAME OVER", this)
   }
 

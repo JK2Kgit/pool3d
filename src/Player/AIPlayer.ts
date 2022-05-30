@@ -37,9 +37,12 @@ export class AIPlayer extends IPlayer{
 
     const white = this.game.balls[0]
     let direction = V3Sub(target.position, white.position)
-    const phi = Math.PI *(Math.random() - .5) * .1
+    const phi = Math.PI *(Math.random() - .5) * .075
     direction = V3RotateOn2D(direction, phi)
-    const str = V3Val(direction)*Math.random()*1.5 + 2
+    let str = V3Val(direction)*Math.random()*1.75 + 3.5
+    if(this.game.stage == GameStage.BallPlacement || this.game.stage == GameStage.BallRePlacement)
+      str += 3
+
 
     const angle = CAMERA_MIN + CAMERA_DIFF*Math.random()
 
@@ -53,7 +56,7 @@ export class AIPlayer extends IPlayer{
         angleRad: angle,
         direction: V3ToUnit(direction),
         positionOnBall: V2(posX,posY),
-        strength: clamp(str, STRENGTH_MIN, STRENGTH_MAX)
+        strength: clamp(str, STRENGTH_MIN, STRENGTH_MAX+1)
       })
     }, 3000*Math.random())
   }
