@@ -7,7 +7,7 @@ import {Game} from "../Game";
 
 export abstract class IPlayer{
   on: boolean = false
-  ballPos: Vector3 = V3(0,0,0)
+  ballPos: Vector3 = V3(0,Math.random() - .5,0)
   cameraTransformInv: Transform = new Transform({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: Math.PI/ 5.7}) // roattion ok , position inverted
   game: Game | undefined
   hitCallback: (hit: Hit) => void = (_hit: Hit) => {}

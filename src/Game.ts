@@ -1,15 +1,15 @@
 import {IPlayer} from "./Player/IPlayer";
 import {Table} from "./GameObjects/Table";
 import * as wh from "./helpers/helpers"
-import {BallColor, GameStage, getStartingBalls, PlayerColors} from "./helpers/helpers"
+import {BallColor, clamp, GameStage, getStartingBalls, PlayerColors} from "./helpers/helpers"
 import {Transform} from "./GameObjects/Transform";
 import {SkyBox} from "./GameObjects/SkyBox";
 import {Ball} from "./GameObjects/Ball";
-import {V3, V3Add, V3TimeScalar, Vector3} from "./helpers/Vector3";
+import {V3, V3Add, V3TimeScalar, V3Val, Vector3} from "./helpers/Vector3";
 import {Hit} from "./helpers/Hit";
 import {Physics} from "./Physics/Physics";
 import {COORDS, FLICKER, PHYSICS_SCALE, SIZE_MULT, UPS, WHITE_BALL_POS, WIDTH} from "./helpers/Constants";
-import {V2, Vector2} from "./helpers/Vector2";
+import {V2, V2Angle, Vector2} from "./helpers/Vector2";
 
 
 export class Game {
@@ -28,6 +28,7 @@ export class Game {
   centerPosition: Vector3
   programInfo: any
   cameraTransform: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI / 7, y: 0, z: 0})
+  relativeZoom: number = 5
   ballHitPosition: Vector2 = V2(0,0)
   physics: Physics
   wasCalculating: boolean = false
@@ -228,9 +229,6 @@ export class Game {
     if (!this.wasCalculating && !this.balls[0].moving) {
       this.centerPosition = V3TimeScalar(this.balls[0].position, PHYSICS_SCALE)
     }
-    this.balls = this.physics.getPositionsNew()
-    this.calculateCameraPosition()
-    this.drawScene();
     this.change = false
 
     if (!this.locked) {
@@ -242,6 +240,10 @@ export class Game {
         this.balls[0].position = V3Add(WHITE_BALL_POS, res.ballPos)
       }
     }
+
+    this.balls = this.physics.getPositionsNew()
+    this.calculateCameraPosition()
+    this.drawScene();
   }
 
   drawScene() {
@@ -400,55 +402,56 @@ export class Game {
   }
 
   private calculateCameraPosition() {
-    let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
+    const phi = this.cameraTransform.rotation.y
+    const dist = Game.distHorizontalToEdge(phi, this.centerPosition)
+    //let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
     this.cameraTransform.position = V3TimeScalar(this.centerPosition, -1)
-    this.table.position.x = Game.distVertical(this.cameraTransform.rotation, distHorizontal) + 4
-    this.table.position.z = Game.heightTable(this.cameraTransform.rotation)
+
+    this.table.position.x = Game.distVertical(this.cameraTransform.rotation, dist) + this.relativeZoom
     // TODO: move table back and forth
   }
 
-  private static distHorizontalToEdge(rotation: Vector3, point: Vector3): number {
-    let phi = Math.abs(rotation.y) + Number.EPSILON
+  private static distHorizontalToEdge(phi: number, point: Vector3): number {
+    if(phi == 0.0)
+      phi += Number.EPSILON
     phi = phi % (Math.PI * 2)
+    if(phi < 0)
+      phi = Math.PI*2 + phi
     let alpha
 
     let yNew, xDist, yDist, dist
-    if (phi <= Math.PI * .5 && phi > 0) {
+    if (phi <= Math.PI * .5) {
+      xDist = 5 + point.x
+      alpha = Math.PI/2 - phi
+      yNew = xDist / Math.tan(alpha)
+      yDist = 5 + point.y
+    } else if (phi <= Math.PI) {
       xDist = 5 - point.x
-      alpha = phi
-      yNew = xDist / Math.tan(alpha)
-      yDist = 5 - point.z
-    } else if (phi <= Math.PI && phi > 0) {
+      alpha = phi - Math.PI/2
+      yNew = Math.tan(Math.PI/2 - alpha) * xDist
+      yDist = 5 + point.y
+    } else if (phi <= Math.PI * 1.5) {
       xDist = 5 - point.x
-      alpha = Math.PI - phi
-      yNew = xDist / Math.tan(alpha)
-      yDist = point.z + 5
-    } else if (phi <= Math.PI * 1.5 && phi > 0) {
-      xDist = point.x + 5
-      alpha = phi
-      yNew = xDist / Math.tan(alpha)
-      yDist = point.z + 5
+      alpha = Math.PI*1.5 - phi
+      yNew = Math.tan(Math.PI/2 - alpha) * xDist
+      yDist = 5 - point.y
     } else {
-      xDist = point.x + 5
-      alpha = Math.PI * 2 - phi
+      xDist = 5 + point.x
+      alpha = Math.PI*1.5 - phi
       yNew = xDist / Math.tan(alpha)
-      yDist = 5 - point.z
+      yDist = 5 - point.y
     }
-    if (yNew > yDist) { // hist short edge
-      dist = Math.abs(yDist / Math.cos(alpha))
-    } else { //long edge
+    if (yNew < yDist) { // hits short edge
       dist = Math.abs(xDist / Math.sin(alpha))
+    } else { //long edge
+      dist = Math.abs(yDist / Math.cos(alpha))
     }
-    return dist
+    //console.log(dist, xDist, yDist, yNew, phi, long)
+    return clamp(dist, 0, xDist > yDist ? xDist : yDist)
   }
 
   private static distVertical(rotation: Vector3, distHorizontal: number) {
     return distHorizontal / Math.cos(rotation.x)
-  }
-
-  private static heightTable(rotation: Vector3) {
-    let phi = Math.abs(rotation.y / 2) + Number.EPSILON
-    return Math.sin(phi)
   }
 
   private handleHit(hit: Hit) {
