@@ -75,6 +75,11 @@ export class Player extends IPlayer{
       if(this.on)
         this.switchCallback()
     })
+    this.inputMethod.setPerspectiveHandler(() => {
+      if(this.on){
+        this.cameraTransformInv.rotation.y += Math.PI
+      }
+    })
   }
 
   hitHandler(){

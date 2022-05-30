@@ -11,7 +11,8 @@ import {Physics} from "./Physics/Physics";
 import {
   COORDS,
   COORDS_SECOND,
-  FLICKER, HEIGHT,
+  FLICKER,
+  HEIGHT,
   PHYSICS_SCALE,
   SIZE_MULT,
   UPS,
@@ -19,6 +20,8 @@ import {
   WIDTH
 } from "./helpers/Constants";
 import {V2, Vector2} from "./helpers/Vector2";
+import {Player} from "./Player/Player";
+import {KeyboardInput} from "./Player/KeyboardInput";
 
 
 export class Game {
@@ -67,7 +70,7 @@ export class Game {
   constructor(canvas: HTMLCanvasElement, textCanvas: HTMLCanvasElement, player0: IPlayer, player1: IPlayer) {
     this.canvas = canvas
     this.textCanvas = textCanvas
-    this.players = [player0, player1]
+    this.players = [player0, player1, new Player(new KeyboardInput())]
     this.gl = canvas.getContext('webgl2', {antialias: false})!;
     this.textContext = textCanvas.getContext('2d')!;
     this.lastFrame = Date.now()
@@ -114,6 +117,8 @@ export class Game {
   }
 
   frame() {
+    if (this.stage == GameStage.Ended)
+      return
     // DT
     const time = Date.now()
     const dt = (time - this.lastFrame) / 1000
@@ -128,8 +133,7 @@ export class Game {
     this.drawUi()
     this.drawFps(fps)
 
-    if (this.stage != GameStage.Ended)
-      window.requestAnimationFrame(() => this.frame());
+    window.requestAnimationFrame(() => this.frame());
   }
 
   drawFps(fps: number) {
@@ -258,6 +262,10 @@ export class Game {
 
     if (!this.locked) {
       let res = this.players[this.currentPlayer].handleInput(dt, this.stage)
+      if(this.players[this.currentPlayer].isAi()){
+        res = this.players[2].handleInput(dt, this.stage)
+      }
+
       this.cameraTransform = res.T
       this.change = res.C
       this.ballHitPosition = res.hitPlace
@@ -392,20 +400,19 @@ export class Game {
     }
     if (faul) {
       this.freeHit = true
-      this.players[this.currentPlayer].on = false
-      this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
-      this.players[this.currentPlayer].on = true
-      this.text1 = this.currentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO"
-      if (this.players[this.currentPlayer].isAi()) {
-        this.text2 = "THINKING..."
-        this.showCenter = false
-        this.showStrength = false
-      } else {
-        this.text2 = undefined
-        this.showCenter = !holeWhite
-        this.showStrength = !holeWhite
-      }
-
+    }
+    this.players[this.currentPlayer].on = false
+    this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
+    this.players[this.currentPlayer].on = true
+    this.text1 = this.currentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO"
+    if (this.players[this.currentPlayer].isAi()) {
+      this.text2 = "THINKING..."
+      this.showCenter = false
+      this.showStrength = false
+    } else {
+      this.text2 = undefined
+      this.showCenter = !holeWhite
+      this.showStrength = !holeWhite
     }
   }
 
@@ -413,6 +420,23 @@ export class Game {
     this.stage = GameStage.Ended
     //this.canvas.style.display = 'none'
     console.log("GAME OVER", this)
+    const mult = WIDTH / 562
+    const half = WIDTH / 2
+    let won = -1
+
+    const color = this.currentPlayer == 0 ? this.player1Color : this.player2Color
+    const balls = this.balls.filter((b) => b.type as number == color as number && b.position.z == 0)
+
+    if(balls.length == 0)
+      won = this.currentPlayer
+    else
+      won = this.currentPlayer == 0 ? 1 : 0
+
+    this.textContext.fillStyle = '#000000';
+    this.textContext.fillRect(58*mult, 52*mult, 446 * mult, 216 * mult)
+    this.textContext.font = 12 * mult + 'px c64Font';
+    this.textContext.fillStyle = '#ffffff';
+    this.textContext.fillText("PLAYER " + (won == 0 ? "ONE" : "TWO") + " WON", half - 84*mult,80*mult);
   }
 
   playSound(name: string) {
@@ -432,10 +456,7 @@ export class Game {
     const dist = Game.distHorizontalToEdge(phi, this.centerPosition)
     //let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
     this.cameraTransform.position = V3TimeScalar(this.centerPosition, -1)
-
-
     this.table.position.x = Game.distVertical(this.cameraTransform.rotation, dist) + this.relativeZoom
-    // TODO: move table back and forth
   }
 
   private static distHorizontalToEdge(phi: number, point: Vector3): number {
@@ -497,6 +518,12 @@ export class Game {
     this.showCenter = !this.players[this.currentPlayer].isAi()
     this.table.showSetup = false
     this.balls[0].moving = false
+    this.physics.balls[0].moving = false
+    try{
+      this.physics.history.balls[0][0].moving = false
+    }catch (e) {
+      
+    }
     this.balls[0].position = V3Add(WHITE_BALL_POS, pos)
     this.textBlack = undefined
   }

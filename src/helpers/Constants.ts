@@ -19,7 +19,7 @@ export const FLICKER = UPS
 export const TOL = 1e-8
 export const PHYSICS_SCALE = 1
 export const STRENGTH_MIN = 1.7
-export const STRENGTH_MAX = 8.3*2
+export const STRENGTH_MAX = 8.3
 export const STRIKE = {
   TOP: .145,
   SIDE: .729,

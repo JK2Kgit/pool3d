@@ -11,4 +11,5 @@ export interface IInputMethod{
 
   setHitHandler(fn: () => void): void
   setSwitchHandler(fn: () => void): void
+  setPerspectiveHandler(fn: () => void): void
 }

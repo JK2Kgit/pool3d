@@ -12,13 +12,16 @@ const STRIKE_DIFF = STRIKE.TOP - STRIKE.BOTTOM
 
 export class AIPlayer extends IPlayer{
   isCalculating = false
+  isPlacing = false
   handleInput(_dt: number, stage:GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2} {
     if(!this.isCalculating && stage == GameStage.Playing && this.on) {
       setTimeout(() => this.calculateHit(), 0)
       this.isCalculating = true
     }
-    if(stage == GameStage.BallPlacement || stage == GameStage.BallRePlacement)
-      this.placeBall()
+    if(!this.isPlacing && (stage == GameStage.BallPlacement || stage == GameStage.BallRePlacement)) {
+      setTimeout(() => this.placeBall(), 1000)
+      this.isPlacing = true
+    }
     return {T: this.cameraTransformInv, C: false, ballPos: V3(0,0,0), hitPlace: V2(0,0)}
   }
 
@@ -68,6 +71,7 @@ export class AIPlayer extends IPlayer{
     this.ballPos = V3ClampLength(this.ballPos, .5)
 
     this.placeCallback(this.ballPos)
+    this.isPlacing = false
   }
 
   hit(hit: Hit){

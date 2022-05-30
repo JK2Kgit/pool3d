@@ -25,4 +25,4 @@ playButton.addEventListener('click', () => {
   game.start()
 })
 
-playButton.click()
+//playButton.click()

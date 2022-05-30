@@ -62,4 +62,12 @@ export class KeyboardInput implements IInputMethod{
     })
   }
 
+  setPerspectiveHandler(fn: () => void): void {
+    document.addEventListener('keypress', (e: KeyboardEvent) =>{
+      if(e.key == 'u'){
+        fn()
+      }
+    })
+  }
+
 }
