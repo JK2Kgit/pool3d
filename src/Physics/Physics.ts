@@ -93,21 +93,15 @@ export class Physics {
     this.timestamp(0)
     let dtPrime = dt
     for (let i = 0; i <= oldHistory.event.length; i++) {
-      console.log(i, "0")
       const event = oldHistory.event[oldHistory.index[i]]
       if(event == undefined)
         continue
 
-      console.log(i, "1", event)
-
       if(event.tau == Infinity){
         this.balls = oldHistory.balls[oldHistory.index[i]]
-
         this.timestamp(dtPrime, event)
         break
       }
-
-      console.log(i, "2")
 
       let eventTime = 0
       while (eventTime < (event.tau - dtPrime)){

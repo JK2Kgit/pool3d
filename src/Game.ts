@@ -5,11 +5,20 @@ import {BallColor, clamp, GameStage, getStartingBalls, PlayerColors} from "./hel
 import {Transform} from "./GameObjects/Transform";
 import {SkyBox} from "./GameObjects/SkyBox";
 import {Ball} from "./GameObjects/Ball";
-import {V3, V3Add, V3TimeScalar, V3Val, Vector3} from "./helpers/Vector3";
+import {V3, V3Add, V3TimeScalar, Vector3} from "./helpers/Vector3";
 import {Hit} from "./helpers/Hit";
 import {Physics} from "./Physics/Physics";
-import {COORDS, FLICKER, PHYSICS_SCALE, SIZE_MULT, UPS, WHITE_BALL_POS, WIDTH} from "./helpers/Constants";
-import {V2, V2Angle, Vector2} from "./helpers/Vector2";
+import {
+  COORDS,
+  COORDS_SECOND,
+  FLICKER, HEIGHT,
+  PHYSICS_SCALE,
+  SIZE_MULT,
+  UPS,
+  WHITE_BALL_POS,
+  WIDTH
+} from "./helpers/Constants";
+import {V2, Vector2} from "./helpers/Vector2";
 
 
 export class Game {
@@ -29,7 +38,7 @@ export class Game {
   programInfo: any
   cameraTransform: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI / 7, y: 0, z: 0})
   relativeZoom: number = 5
-  ballHitPosition: Vector2 = V2(0,0)
+  ballHitPosition: Vector2 = V2(0, 0)
   physics: Physics
   wasCalculating: boolean = false
   change: boolean = true
@@ -42,8 +51,9 @@ export class Game {
   flicker: number = 0
   stage: GameStage = GameStage.BallPlacement
   ballInHoles: Ball[] = []
+  freeHit: boolean = false
   firstHit: Ball | undefined = undefined
-  audio :  HTMLAudioElement
+  audio: HTMLAudioElement
 
   player1Color: PlayerColors = PlayerColors.Undefined
   canSwitchColor: boolean = false
@@ -83,7 +93,7 @@ export class Game {
   start() {
     this.lastFrame = Date.now()
     this.players[this.currentPlayer].on = true
-    this.players.forEach(p =>{
+    this.players.forEach(p => {
       p.setTransform(this.cameraTransform)
       p.hitCallback = (hit: Hit) => this.handleHit(hit)
       p.placeCallback = (pos: Vector3) => this.handlePlace(pos)
@@ -92,12 +102,11 @@ export class Game {
     })
     this.skyBox.draw(this.cameraTransform.rotation.x)
     this.text1 = "PLAYER ONE"
-    if(this.players[this.currentPlayer].isAi()){
+    if (this.players[this.currentPlayer].isAi()) {
       this.text2 = "THINKING..."
       this.showCenter = false
       this.showStrength = false
-    }
-    else {
+    } else {
       this.textBlack = "PLACE THE BALL"
     }
     window.requestAnimationFrame(() => this.frame());
@@ -116,48 +125,48 @@ export class Game {
 
     // TextCanvas
     this.textContext.clearRect(0, 0, this.textCanvas.width, this.textCanvas.height);
-    this.drawUi(this.currentPlayer, null)
+    this.drawUi()
     this.drawFps(fps)
 
-    if(this.stage != GameStage.Ended)
+    if (this.stage != GameStage.Ended)
       window.requestAnimationFrame(() => this.frame());
   }
 
   drawFps(fps: number) {
     this.textContext.fillStyle = 'white';
-    this.textContext.fillRect(0, 46, 200, 60)
+    this.textContext.fillRect(0, HEIGHT - 60, 200, 60)
     this.textContext.font = '25px Arial';
     this.textContext.fillStyle = 'red';
-    this.textContext.fillText("FPS: " + fps, 10, 75);
+    this.textContext.fillText("FPS: " + fps, 10, HEIGHT - 25);
   }
 
-  drawUi(_playerId: number, _playerOneColor: any) {
+  drawUi() {
     this.flicker += 1
     const mult = WIDTH / 562
     const half = WIDTH / 2
 
-    if(this.text1 != undefined){
+    if (this.text1 != undefined) {
       this.textContext.fillStyle = '#ffffff';
-      this.textContext.fillRect(100*mult, 0, 124 * mult, 12 * mult)
-      this.textContext.font = 12*mult + 'px c64Font';
+      this.textContext.fillRect(100 * mult, 0, 124 * mult, 12 * mult)
+      this.textContext.font = 12 * mult + 'px c64Font';
       this.textContext.fillStyle = 'black';
-      this.textContext.fillText(this.text1, 102*mult,  12*mult);
+      this.textContext.fillText(this.text1, 102 * mult, 12 * mult);
     }
 
-    if(this.text2 != undefined){
+    if (this.text2 != undefined) {
       this.textContext.fillStyle = '#ffffff';
-      this.textContext.fillRect(280*mult, 0, 134 * mult, 12 * mult)
-      this.textContext.font = 12*mult + 'px c64Font';
-      this.textContext.fillStyle = 'black';
-      this.textContext.fillText(this.text2, 282*mult,  12*mult);
-    }
-
-    if(this.textBlack != undefined){
+      this.textContext.fillRect(280 * mult, 0, 134 * mult, 12 * mult)
+      this.textContext.font = 12 * mult + 'px c64Font';
       this.textContext.fillStyle = '#000000';
-      this.textContext.fillRect(280*mult, 0, 172 * mult, 12 * mult)
-      this.textContext.font = 12*mult + 'px c64Font';
-      this.textContext.fillStyle = 'white';
-      this.textContext.fillText(this.textBlack, 282*mult,  12*mult);
+      this.textContext.fillText(this.text2, 282 * mult, 12 * mult);
+    }
+
+    if (this.textBlack != undefined) {
+      this.textContext.fillStyle = '#000000';
+      this.textContext.fillRect(280 * mult, 0, 172 * mult, 12 * mult)
+      this.textContext.font = 12 * mult + 'px c64Font';
+      this.textContext.fillStyle = '#ffffff';
+      this.textContext.fillText(this.textBlack, 282 * mult, 12 * mult);
     }
 
     if (this.showStrength) {
@@ -185,15 +194,15 @@ export class Game {
 
     }
 
-    if (this.showCenter){
+    if (this.showCenter) {
       this.textContext.fillStyle = '#588d43';
       this.textContext.fillRect(half - 12.5 * mult, 0, 25 * mult, 23 * mult)
       this.textContext.drawImage(this.images[0], half - 12.5 * mult, 0)
-      const centerY = (1 - this.ballHitPosition.y)*mult*11.5
-      const centerX = half + this.ballHitPosition.x*mult*10
+      const centerY = (1 - this.ballHitPosition.y) * mult * 11.5
+      const centerX = half + this.ballHitPosition.x * mult * 10
       this.textContext.fillStyle = '#000000';
-      this.textContext.fillRect(centerX - 5.25*mult, centerY - mult, 10.5*mult, 2*mult)
-      this.textContext.fillRect(centerX - 1.75*mult, centerY - 2.5*mult, 3.5*mult, 5*mult)
+      this.textContext.fillRect(centerX - 5.25 * mult, centerY - mult, 10.5 * mult, 2 * mult)
+      this.textContext.fillRect(centerX - 1.75 * mult, centerY - 2.5 * mult, 3.5 * mult, 5 * mult)
 
     }
 
@@ -209,10 +218,26 @@ export class Game {
 
     let coords = COORDS[this.player1Color == PlayerColors.Undefined ? 0 : 1][this.currentPlayer]
     this.textContext.fillStyle = '#588d43';
-    if(!this.physics.isCalculating())
+    if ((!this.physics.isCalculating()) || this.freeHit)
       this.textContext.fillRect(coords.x, coords.y, 25 * mult, 23 * mult)
-    if (this.flicker > FLICKER / 2 && !this.physics.isCalculating())
+    if ((this.flicker > FLICKER / 2 && !this.physics.isCalculating()) || this.freeHit)
       this.textContext.drawImage(this.images[0], coords.x, coords.y)
+
+    if (this.freeHit) {
+      let coordsSecond = COORDS_SECOND[this.player1Color == PlayerColors.Undefined ? 0 : 1][this.currentPlayer]
+      if (!this.physics.isCalculating())
+        this.textContext.fillRect(coordsSecond.x, coordsSecond.y, 25 * mult, 23 * mult)
+      if (this.flicker > FLICKER / 2 && !this.physics.isCalculating())
+        this.textContext.drawImage(this.images[0], coordsSecond.x, coordsSecond.y)
+
+      let textCords = [{x: 0, y: 23*mult}, {x: WIDTH - 112*mult, y: 23*mult}][this.currentPlayer]
+
+      this.textContext.fillStyle = '#000000';
+      this.textContext.fillRect(textCords.x, textCords.y, 112*mult, 12*mult)
+      this.textContext.fillStyle = '#ffffff';
+      this.textContext.fillText("FREE BALL", textCords.x + 2*mult, textCords.y + 12*mult);
+
+    }
 
 
     if (this.flicker > FLICKER) {
@@ -302,11 +327,11 @@ export class Game {
           if (this.player1Color as number != this.firstHit?.type as number && this.firstHit.type != BallColor.black)
             faul = true
 
-          if(this.player1Color == PlayerColors.PlayerColor){
-            if(!holeClear)
+          if (this.player1Color == PlayerColors.PlayerColor) {
+            if (!holeClear)
               end = true
           } else {
-            if(!holeDotted)
+            if (!holeDotted)
               end = true
           }
 
@@ -314,11 +339,11 @@ export class Game {
           if (this.player2Color as number != this.firstHit?.type as number && this.firstHit.type != BallColor.black)
             faul = true
 
-          if(this.player2Color == PlayerColors.PlayerColor){
-            if(!holeClear)
+          if (this.player2Color == PlayerColors.PlayerColor) {
+            if (!holeClear)
               end = true
           } else {
-            if(!holeDotted)
+            if (!holeDotted)
               end = true
           }
         }
@@ -326,10 +351,10 @@ export class Game {
       }
     }
 
-    if(this.firstHit?.type == BallColor.black){
+    if (this.firstHit?.type == BallColor.black) {
       const color = this.currentPlayer == 0 ? this.player1Color : this.player2Color
       const balls = this.balls.filter((b) => b.type as number == color as number && b.position.z == 0)
-      if(balls.length != 0)
+      if (balls.length != 0)
         faul = true
     }
 
@@ -339,19 +364,19 @@ export class Game {
     if (holeWhite)
       faul = true
 
-    if(faul)
+    if (faul)
       end = true
 
 
     this.ballInHoles = []
     this.firstHit = undefined
 
-    if(end)
-      this.switchPlayer(faul)
+    if (end)
+      this.switchPlayer(faul, holeWhite)
   }
 
-  switchPlayer(faul: boolean) {
-    if (faul) {
+  switchPlayer(faul: boolean, holeWhite: boolean) {
+    if (holeWhite) {
       this.table.showSetup = true
       this.balls[0].moving = true
       this.balls[0].position = WHITE_BALL_POS
@@ -365,22 +390,22 @@ export class Game {
       this.showCenter = false
       this.textBlack = "PLACE THE BALL"
     }
-    this.players[this.currentPlayer].on = false
-    this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
-    this.players[this.currentPlayer].on = true
-    this.text1 = this.currentPlayer == 0 ? "PLAYER ONE": "PLAYER TWO"
-    this.canSwitchColor = false
+    if (faul) {
+      this.freeHit = true
+      this.players[this.currentPlayer].on = false
+      this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
+      this.players[this.currentPlayer].on = true
+      this.text1 = this.currentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO"
+      if (this.players[this.currentPlayer].isAi()) {
+        this.text2 = "THINKING..."
+        this.showCenter = false
+        this.showStrength = false
+      } else {
+        this.text2 = undefined
+        this.showCenter = !holeWhite
+        this.showStrength = !holeWhite
+      }
 
-    if(this.players[this.currentPlayer].isAi()){
-      console.log("NOW AI")
-      this.text2 = "THINKING..."
-      this.showCenter = false
-      this.showStrength = false
-    }
-    else {
-      this.text2 = undefined
-      this.showCenter = !faul
-      this.showStrength = !faul
     }
   }
 
@@ -390,12 +415,13 @@ export class Game {
     console.log("GAME OVER", this)
   }
 
-  playSound(name: string){
+  playSound(name: string) {
     this.audio.src = 'UIAssets/' + name
     this.audio.load()
     setTimeout(() => {
       this.audio.play()
-        .then(() => {})
+        .then(() => {
+        })
         .catch(() => this.audio.play());
     }, 50)
 
@@ -407,37 +433,38 @@ export class Game {
     //let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
     this.cameraTransform.position = V3TimeScalar(this.centerPosition, -1)
 
+
     this.table.position.x = Game.distVertical(this.cameraTransform.rotation, dist) + this.relativeZoom
     // TODO: move table back and forth
   }
 
   private static distHorizontalToEdge(phi: number, point: Vector3): number {
-    if(phi == 0.0)
+    if (phi == 0.0)
       phi += Number.EPSILON
     phi = phi % (Math.PI * 2)
-    if(phi < 0)
-      phi = Math.PI*2 + phi
+    if (phi < 0)
+      phi = Math.PI * 2 + phi
     let alpha
 
     let yNew, xDist, yDist, dist
     if (phi <= Math.PI * .5) {
       xDist = 5 + point.x
-      alpha = Math.PI/2 - phi
+      alpha = Math.PI / 2 - phi
       yNew = xDist / Math.tan(alpha)
       yDist = 5 + point.y
     } else if (phi <= Math.PI) {
       xDist = 5 - point.x
-      alpha = phi - Math.PI/2
-      yNew = Math.tan(Math.PI/2 - alpha) * xDist
+      alpha = phi - Math.PI / 2
+      yNew = Math.tan(Math.PI / 2 - alpha) * xDist
       yDist = 5 + point.y
     } else if (phi <= Math.PI * 1.5) {
       xDist = 5 - point.x
-      alpha = Math.PI*1.5 - phi
-      yNew = Math.tan(Math.PI/2 - alpha) * xDist
+      alpha = Math.PI * 1.5 - phi
+      yNew = Math.tan(Math.PI / 2 - alpha) * xDist
       yDist = 5 - point.y
     } else {
       xDist = 5 + point.x
-      alpha = Math.PI*1.5 - phi
+      alpha = Math.PI * 1.5 - phi
       yNew = xDist / Math.tan(alpha)
       yDist = 5 - point.y
     }
@@ -455,7 +482,10 @@ export class Game {
   }
 
   private handleHit(hit: Hit) {
-    this.canSwitchColor = false
+    if (!this.freeHit)
+      this.canSwitchColor = false
+    if (this.freeHit)
+      this.freeHit = false
     this.playSound("strike.mp3")
     this.physics.hit(hit)
     this.text2 = undefined
@@ -471,8 +501,8 @@ export class Game {
     this.textBlack = undefined
   }
 
-  private switchColor(){
-    if(this.canSwitchColor)
+  private switchColor() {
+    if (this.canSwitchColor)
       this.player1Color = this.player2Color
   }
 
