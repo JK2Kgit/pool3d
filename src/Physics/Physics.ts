@@ -132,7 +132,7 @@ export class Physics {
       this.resolve(event)
       this.timestamp(event.tau, event)
     }
-    console.log(JSON.parse(JSON.stringify(this.history)))
+    //console.log(JSON.parse(JSON.stringify(this.history)))
     let i = -1
     while (true){
       i++
@@ -281,8 +281,6 @@ export class Physics {
 
   hit(hit: Hit){
     if(this.isCalculating()) return;
-
-    console.log(hit)
     const a = -hit.positionOnBall.x*R
     const b = (hit.positionOnBall.y + 0.25)*R
 

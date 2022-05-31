@@ -27,3 +27,5 @@ export const STRIKE = {
 }
 export const CAMERA_MIN = Math.PI/ 12
 export const CAMERA_MAX = Math.PI/4
+export const ZOOM_MIN = .25
+export const ZOOM_MAX = 1

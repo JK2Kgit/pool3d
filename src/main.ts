@@ -24,5 +24,3 @@ playButton.addEventListener('click', () => {
   console.log(game)
   game.start()
 })
-
-//playButton.click()

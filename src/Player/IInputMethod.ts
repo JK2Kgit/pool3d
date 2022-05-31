@@ -9,6 +9,9 @@ export interface IInputMethod{
   getUpModified(): number // strength up
   getDownModified(): number // strength down
 
+  getZoomIn(): number
+  getZoomOut(): number
+
   setHitHandler(fn: () => void): void
   setSwitchHandler(fn: () => void): void
   setPerspectiveHandler(fn: () => void): void

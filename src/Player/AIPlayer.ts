@@ -5,15 +5,16 @@ import {V3, V3ClampLength, V3RotateOn2D, V3Sub, V3ToUnit, V3Val, Vector3} from "
 import {V2, Vector2} from "../helpers/Vector2";
 import {Hit} from "../helpers/Hit";
 import {Ball} from "../GameObjects/Ball";
-import {CAMERA_MAX, CAMERA_MIN, STRENGTH_MAX, STRENGTH_MIN, STRIKE} from "../helpers/Constants";
+import {CAMERA_MAX, CAMERA_MIN, STRENGTH_MAX, STRENGTH_MIN, STRIKE, ZOOM_MAX, ZOOM_MIN} from "../helpers/Constants";
 
 const CAMERA_DIFF = CAMERA_MAX - CAMERA_MIN
 const STRIKE_DIFF = STRIKE.TOP - STRIKE.BOTTOM
+const DEFAULT_ZOOM =( ZOOM_MIN + ZOOM_MAX)/2
 
 export class AIPlayer extends IPlayer{
   isCalculating = false
   isPlacing = false
-  handleInput(_dt: number, stage:GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2} {
+  handleInput(_dt: number, stage:GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2, Zoom: number} {
     if(!this.isCalculating && stage == GameStage.Playing && this.on) {
       setTimeout(() => this.calculateHit(), 0)
       this.isCalculating = true
@@ -22,7 +23,7 @@ export class AIPlayer extends IPlayer{
       setTimeout(() => this.placeBall(), 1000)
       this.isPlacing = true
     }
-    return {T: this.cameraTransformInv, C: false, ballPos: V3(0,0,0), hitPlace: V2(0,0)}
+    return {T: this.cameraTransformInv, C: false, ballPos: V3(0,0,0), hitPlace: V2(0,0), Zoom: DEFAULT_ZOOM}
   }
 
   calculateHit(){
@@ -32,7 +33,7 @@ export class AIPlayer extends IPlayer{
     if(color == PlayerColors.Undefined)
       color = Math.random() > .5 ? PlayerColors.PlayerColor: PlayerColors.PlayerGrid
     const balls = this.game.balls.filter((b) => b.type as number == color as number && b.position.z == 0)
-    let target: Ball | undefined = undefined
+    let target: Ball | undefined
     if(balls.length == 0)
       target = this.game.balls.filter((b) => b.type == BallColor.black)[0]
     else

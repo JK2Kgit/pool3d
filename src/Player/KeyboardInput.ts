@@ -70,4 +70,12 @@ export class KeyboardInput implements IInputMethod{
     })
   }
 
+  getZoomIn(): number {
+    return this.keys.has("+") ? 1 : 0;
+  }
+
+  getZoomOut(): number {
+    return this.keys.has("-") ? 1 : 0;
+  }
+
 }

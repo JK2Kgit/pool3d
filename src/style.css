@@ -1,6 +1,6 @@
-
 body{
-  background-color: gray;
+  background-color: #444;
+  font-size: 20px;
 }
 
 #app {
@@ -17,6 +17,19 @@ body{
   top: 150px;
   left: 100px;
 }
+#info{
+  position: absolute;
+  left: 100px;
+  top: 790px;
+  padding: 5px;
+  width: 100px;
+  color: #ddd;
+  font-size: 20px;
+}
+label{
+  color: #ddd;
+}
+
 #gameCanvas {
   position: absolute;
   top: 150px;
@@ -32,4 +45,7 @@ body{
 
 .sel{
   margin: 10px;
+}
+#play{
+  font-size: 18px;
 }

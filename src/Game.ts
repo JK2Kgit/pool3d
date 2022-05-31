@@ -40,7 +40,7 @@ export class Game {
   centerPosition: Vector3
   programInfo: any
   cameraTransform: Transform = new Transform({x: 0, y: 0, z: 0}, {x: Math.PI / 7, y: 0, z: 0})
-  relativeZoom: number = 5
+  relativeZoom: number = 4
   ballHitPosition: Vector2 = V2(0, 0)
   physics: Physics
   wasCalculating: boolean = false
@@ -125,13 +125,13 @@ export class Game {
     this.lastFrame = Date.now()
     const fps = Math.round(1 / dt);
 
-    // Game Canvas
-    this.update(dt)
-
     // TextCanvas
     this.textContext.clearRect(0, 0, this.textCanvas.width, this.textCanvas.height);
     this.drawUi()
     this.drawFps(fps)
+
+    // Game Canvas
+    this.update(dt)
 
     window.requestAnimationFrame(() => this.frame());
   }
@@ -269,6 +269,7 @@ export class Game {
       this.cameraTransform = res.T
       this.change = res.C
       this.ballHitPosition = res.hitPlace
+      this.relativeZoom = res.Zoom
       if (this.stage == GameStage.BallPlacement || this.stage == GameStage.BallRePlacement) {
         this.balls[0].position = V3Add(WHITE_BALL_POS, res.ballPos)
       }
@@ -295,7 +296,7 @@ export class Game {
   }
 
   handleMoveEnd() {
-    console.log(JSON.parse(JSON.stringify(this.ballInHoles)), this.firstHit?.clone())
+    //console.log(JSON.parse(JSON.stringify(this.ballInHoles)), this.firstHit?.clone())
     const holeWhite = this.ballInHoles.some((b) => b.type == BallColor.White)
     const holeBlack = this.ballInHoles.some((b) => b.type == BallColor.black)
     const holeDotted = this.ballInHoles.some((b) => b.type == BallColor.grid)
@@ -398,31 +399,36 @@ export class Game {
       this.showCenter = false
       this.textBlack = "PLACE THE BALL"
     }
-    if (faul) {
+    if(!this.freeHit || faul){
+      this.players[this.currentPlayer].on = false
+      this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
+      this.players[this.currentPlayer].on = true
+      this.text1 = this.currentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO"
+      if (this.players[this.currentPlayer].isAi()) {
+        this.text2 = "THINKING..."
+        this.showCenter = false
+        this.showStrength = false
+      } else {
+        this.text2 = undefined
+        this.showCenter = !holeWhite
+        this.showStrength = !holeWhite
+      }
+      this.freeHit = false
+    }
+    if(this.freeHit)
+      this.freeHit = false
+    if (faul)
       this.freeHit = true
-    }
-    this.players[this.currentPlayer].on = false
-    this.currentPlayer = this.currentPlayer == 0 ? 1 : 0
-    this.players[this.currentPlayer].on = true
-    this.text1 = this.currentPlayer == 0 ? "PLAYER ONE" : "PLAYER TWO"
-    if (this.players[this.currentPlayer].isAi()) {
-      this.text2 = "THINKING..."
-      this.showCenter = false
-      this.showStrength = false
-    } else {
-      this.text2 = undefined
-      this.showCenter = !holeWhite
-      this.showStrength = !holeWhite
-    }
+
   }
 
   gameOver() {
     this.stage = GameStage.Ended
     //this.canvas.style.display = 'none'
-    console.log("GAME OVER", this)
+    //console.log("GAME OVER", this)
     const mult = WIDTH / 562
     const half = WIDTH / 2
-    let won = -1
+    let won
 
     const color = this.currentPlayer == 0 ? this.player1Color : this.player2Color
     const balls = this.balls.filter((b) => b.type as number == color as number && b.position.z == 0)
@@ -456,7 +462,7 @@ export class Game {
     const dist = Game.distHorizontalToEdge(phi, this.centerPosition)
     //let distHorizontal = Game.distHorizontalToEdge(this.cameraTransform.rotation, this.centerPosition)
     this.cameraTransform.position = V3TimeScalar(this.centerPosition, -1)
-    this.table.position.x = Game.distVertical(this.cameraTransform.rotation, dist) + this.relativeZoom
+    this.table.position.x = (Game.distVertical(this.cameraTransform.rotation, dist) + 7) * this.relativeZoom
   }
 
   private static distHorizontalToEdge(phi: number, point: Vector3): number {
@@ -485,7 +491,7 @@ export class Game {
       yDist = 5 - point.y
     } else {
       xDist = 5 + point.x
-      alpha = Math.PI * 1.5 - phi
+      alpha = phi - Math.PI * 1.5
       yNew = xDist / Math.tan(alpha)
       yDist = 5 - point.y
     }
@@ -494,7 +500,7 @@ export class Game {
     } else { //long edge
       dist = Math.abs(yDist / Math.cos(alpha))
     }
-    //console.log(dist, xDist, yDist, yNew, phi, long)
+    //console.log(dist, xDist, yDist, yNew, phi)
     return clamp(dist, 0, xDist > yDist ? xDist : yDist)
   }
 
@@ -505,8 +511,6 @@ export class Game {
   private handleHit(hit: Hit) {
     if (!this.freeHit)
       this.canSwitchColor = false
-    if (this.freeHit)
-      this.freeHit = false
     this.playSound("strike.mp3")
     this.physics.hit(hit)
     this.text2 = undefined

@@ -19,7 +19,7 @@ export abstract class IPlayer{
   public referenceGame(game: Game){
     this.game = game
   }
-  public abstract handleInput(dt:number, stage:GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2}
+  public abstract handleInput(dt:number, stage:GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2, Zoom: number}
   public abstract getStrength(): number
   public abstract isAi(): boolean
 }

@@ -3,12 +3,13 @@ import {Transform} from "../GameObjects/Transform";
 import {IInputMethod} from "./IInputMethod";
 import {clamp, GameStage} from "../helpers/helpers";
 import {V3ClampLength, V3RotateOn2D, Vector3} from "../helpers/Vector3";
-import {CAMERA_MAX, CAMERA_MIN, STRENGTH_MAX, STRENGTH_MIN, STRIKE} from "../helpers/Constants";
+import {CAMERA_MAX, CAMERA_MIN, STRENGTH_MAX, STRENGTH_MIN, STRIKE, ZOOM_MAX, ZOOM_MIN} from "../helpers/Constants";
 import {V2, Vector2} from "../helpers/Vector2";
 
 const STRENGTH_DIFF = STRENGTH_MAX - STRENGTH_MIN;
 const CAMERA_DIFF = CAMERA_MAX - CAMERA_MIN
 const STRIKE_DIFF = STRIKE.TOP - STRIKE.BOTTOM
+const DEFAULT_ZOOM =( ZOOM_MIN + ZOOM_MAX)/2
 
 export class Player extends IPlayer{
   inputMethod: IInputMethod
@@ -18,6 +19,7 @@ export class Player extends IPlayer{
   strength: number = STRENGTH_MIN + STRENGTH_DIFF/2
   lastStage: GameStage = GameStage.BallPlacement
   hitPlace: Vector2 = V2(0,0)
+  zoom: number = DEFAULT_ZOOM
 
   constructor(inputMethod: IInputMethod) {
     super();
@@ -25,7 +27,7 @@ export class Player extends IPlayer{
     this.registerHandlers()
   }
 
-  handleInput(dt: number, stage: GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2}{
+  handleInput(dt: number, stage: GameStage): {T: Transform, C: boolean, ballPos: Vector3, hitPlace: Vector2, Zoom: number}{
     this.lastStage = stage
     let C = false
     this.cameraTransformInv.rotation.y += (this.sensitivity * dt * this.inputMethod.getLeft())
@@ -33,6 +35,10 @@ export class Player extends IPlayer{
     this.cameraTransformInv.rotation.x += (this.sensitivity * dt * this.inputMethod.getUp())
     this.cameraTransformInv.rotation.x += (-this.sensitivity * dt * this.inputMethod.getDown())
     this.cameraTransformInv.rotation.x = clamp(this.cameraTransformInv.rotation.x, CAMERA_MIN, CAMERA_MAX)
+
+    this.zoom += (this.sensitivity * dt * this.inputMethod.getZoomIn())
+    this.zoom += (-this.sensitivity * dt * this.inputMethod.getZoomOut())
+    this.zoom = clamp(this.zoom, ZOOM_MIN, ZOOM_MAX)
 
     if(stage == GameStage.BallPlacement || stage == GameStage.BallRePlacement){
       this.ballPos.x += (this.posSensitivity * dt * this.inputMethod.getUpModified())
@@ -42,7 +48,7 @@ export class Player extends IPlayer{
       this.ballPos.x = clamp(this.ballPos.x, -Infinity, 0)
       this.ballPos = V3ClampLength(this.ballPos, .5)
 
-      return {T: this.cameraTransformInv, C: C, ballPos: this.ballPos, hitPlace: this.hitPlace}
+      return {T: this.cameraTransformInv, C: C, ballPos: this.ballPos, hitPlace: this.hitPlace, Zoom: this.zoom}
     }
 
     if(stage == GameStage.Playing){
@@ -66,7 +72,7 @@ export class Player extends IPlayer{
 
     }
 
-    return {T: this.cameraTransformInv, C: C, ballPos: this.ballPos, hitPlace: this.hitPlace}
+    return {T: this.cameraTransformInv, C: C, ballPos: this.ballPos, hitPlace: this.hitPlace, Zoom: this.zoom}
   }
 
   registerHandlers(){
